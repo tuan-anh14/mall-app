@@ -1,0 +1,26 @@
+node_modules/
+.expo/
+dist/
+build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Env
+.env
+.env.local
+.env*.local
+
+# EAS secrets
+google-service-account.json
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
