@@ -8,16 +8,12 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@hooks/useAuth';
+import type { ProfileStackParamList } from '@app/navigation/types';
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
+type Nav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 
 const ROLE_LABEL: Record<string, string> = {
   buyer: 'Người mua',
@@ -25,8 +21,50 @@ const ROLE_LABEL: Record<string, string> = {
   admin: 'Quản trị viên',
 };
 
+const SELLER_STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Đang chờ duyệt',
+  APPROVED: 'Đã được duyệt',
+  REJECTED: 'Bị từ chối',
+};
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    </View>
+  );
+}
+
+function MenuItem({
+  icon,
+  label,
+  onPress,
+  danger,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
+        <Text style={styles.menuIconText}>{icon}</Text>
+      </View>
+      <Text style={[styles.menuLabel, danger && styles.menuLabelDanger]}>{label}</Text>
+      <Text style={styles.menuChevron}>›</Text>
+    </TouchableOpacity>
+  );
+}
+
 export function ProfileScreen() {
+  const navigation = useNavigation<Nav>();
   const { user, logout } = useAuth();
+
+  const avatarLetter = user?.name?.[0]?.toUpperCase() ?? '?';
+  const isBuyer = user?.userType === 'buyer';
+  const hasPendingRequest = user?.sellerRequestStatus === 'PENDING';
 
   function handleLogout() {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất không?', [
@@ -39,11 +77,9 @@ export function ProfileScreen() {
     ]);
   }
 
-  const avatarLetter = user?.name?.[0]?.toUpperCase() ?? '?';
-
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Hồ sơ</Text>
@@ -71,7 +107,49 @@ export function ProfileScreen() {
           {user?.sellerRequestStatus && (
             <>
               <View style={styles.divider} />
-              <InfoRow label="Yêu cầu bán hàng" value={user.sellerRequestStatus} />
+              <InfoRow
+                label="Yêu cầu bán hàng"
+                value={SELLER_STATUS_LABEL[user.sellerRequestStatus] ?? user.sellerRequestStatus}
+              />
+            </>
+          )}
+        </View>
+
+        {/* Actions Card */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Cài đặt</Text>
+
+          <MenuItem
+            icon="✏️"
+            label="Chỉnh sửa hồ sơ"
+            onPress={() => navigation.navigate('EditProfile')}
+          />
+          <View style={styles.divider} />
+
+          <MenuItem
+            icon="🔒"
+            label="Đổi mật khẩu"
+            onPress={() => navigation.navigate('ChangePassword')}
+          />
+
+          {isBuyer && !hasPendingRequest && (
+            <>
+              <View style={styles.divider} />
+              <MenuItem
+                icon="🏪"
+                label="Trở thành người bán"
+                onPress={() => navigation.navigate('BecomeSeller')}
+              />
+            </>
+          )}
+
+          {hasPendingRequest && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.pendingRow}>
+                <Text style={styles.pendingIcon}>⏳</Text>
+                <Text style={styles.pendingText}>Yêu cầu bán hàng đang chờ duyệt</Text>
+              </View>
             </>
           )}
         </View>
@@ -85,7 +163,7 @@ export function ProfileScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.logoutText}>
-              {logout.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
+              {logout.isPending ? 'Đang đăng xuất...' : '🚪  Đăng xuất'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -96,6 +174,7 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F9FAFB' },
+  scroll: { paddingBottom: 32 },
   header: {
     paddingHorizontal: 24,
     paddingTop: 20,
@@ -150,6 +229,7 @@ const styles = StyleSheet.create({
   },
   card: {
     marginHorizontal: 20,
+    marginBottom: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 20,
@@ -189,10 +269,56 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     marginVertical: 12,
   },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuIconDanger: {
+    backgroundColor: '#FEF2F2',
+  },
+  menuIconText: {
+    fontSize: 18,
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  menuLabelDanger: {
+    color: '#EF4444',
+  },
+  menuChevron: {
+    fontSize: 20,
+    color: '#9CA3AF',
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  pendingIcon: { fontSize: 20 },
+  pendingText: {
+    fontSize: 14,
+    color: '#F59E0B',
+    fontWeight: '500',
+    flex: 1,
+  },
   footer: {
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 32,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   logoutBtn: {
     backgroundColor: '#FEF2F2',

@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TabParamList } from './types';
 import { HomeScreen } from '@screens/HomeScreen';
-import { ProfileScreen } from '@screens/ProfileScreen';
+import { ProfileNavigator } from './ProfileNavigator';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -47,7 +47,7 @@ export function TabNavigator() {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileNavigator}
         options={{
           tabBarLabel: 'Hồ sơ',
           tabBarIcon: ({ focused }) => (

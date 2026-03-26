@@ -6,9 +6,16 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
 };
 
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
+  BecomeSeller: undefined;
+};
+
 export type TabParamList = {
   Home: undefined;
-  Profile: undefined;
+  Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
 export type RootStackParamList = {
