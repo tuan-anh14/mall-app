@@ -16,7 +16,7 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
-export function Providers({ children }: ProvidersProps) {
+export default function Providers({ children }: ProvidersProps) {
   const hydrate = useAuthStore((s) => s.hydrate);
 
   useEffect(() => {

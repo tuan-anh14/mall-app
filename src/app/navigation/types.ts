@@ -15,6 +15,9 @@ export type ProfileStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
+  Search: undefined;
+  Cart: undefined;
+  Wishlist: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 

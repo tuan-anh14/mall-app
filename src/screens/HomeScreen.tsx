@@ -1,16 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   ScrollView,
+  FlatList,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
   RefreshControl,
   Alert,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@hooks/useAuth';
 import { useCategories, usePromotions, useProducts } from '@hooks/useHome';
@@ -18,410 +22,438 @@ import { ProductCard, TrendingCard } from '@components/product/ProductCard';
 import type { Product, Category, Promotion } from '@types/product';
 
 const { width: W } = Dimensions.get('window');
-const H_PAD = 20;
-const GRID_GAP = 12;
-const CARD_W = (W - H_PAD * 2 - GRID_GAP) / 2;
+const H_PAD   = 16;
+const GAP     = 12;
+const CARD_W  = (W - H_PAD * 2 - GAP) / 2;
+const PROMO_W = W - H_PAD * 2;
 
-const PROMO_PALETTE = [
-  { bg: '#1A56DB', accent: 'rgba(255,255,255,0.18)', text: '#fff', sub: 'rgba(255,255,255,0.75)' },
-  { bg: '#7C3AED', accent: 'rgba(255,255,255,0.15)', text: '#fff', sub: 'rgba(255,255,255,0.75)' },
-  { bg: '#047857', accent: 'rgba(255,255,255,0.15)', text: '#fff', sub: 'rgba(255,255,255,0.75)' },
-  { bg: '#B45309', accent: 'rgba(255,255,255,0.15)', text: '#fff', sub: 'rgba(255,255,255,0.75)' },
+// ─── Design tokens — mall-fe globals.css ──────────────
+const C = {
+  primary:       '#1A56DB',
+  primaryDark:   '#1E3A8A',
+  primaryLight:  '#EFF6FF',
+  bg:            '#F3F4F6',   // --muted
+  surface:       '#FFFFFF',
+  inputBg:       '#F9FAFB',   // --input-background
+  border:        '#E5E7EB',   // --border
+  text:          '#1F2937',   // --foreground
+  textSub:       '#6B7280',   // --muted-foreground
+  textMuted:     '#9CA3AF',
+  danger:        '#EF4444',   // --destructive
+  star:          '#F59E0B',   // --chart-1
+  ring:          '#3B82F6',   // --ring
+};
+
+const PROMO_THEMES = [
+  { bg: '#1A56DB', blob: 'rgba(255,255,255,0.10)' },
+  { bg: '#4F46E5', blob: 'rgba(255,255,255,0.10)' },
+  { bg: '#0E7490', blob: 'rgba(255,255,255,0.10)' },
+  { bg: '#065F46', blob: 'rgba(255,255,255,0.10)' },
 ];
 
-// ─────────────────── Skeleton ───────────────────────
+// Category → Ionicons name
+const CAT_MAP: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
+  'điện tử':   'phone-portrait-outline',
+  'thời trang':'shirt-outline',
+  'giày':      'footsteps-outline',
+  'túi':       'bag-handle-outline',
+  'mỹ phẩm':  'color-palette-outline',
+  'gia dụng':  'home-outline',
+  'thể thao':  'barbell-outline',
+  'sách':      'book-outline',
+  'đồ chơi':   'game-controller-outline',
+  'thực phẩm': 'nutrition-outline',
+};
 
-function Skeleton({ w, h, radius = 10 }: { w?: number | string; h: number; radius?: number }) {
-  return (
-    <View
-      style={{
-        width: (w as number) ?? '100%',
-        height: h,
-        borderRadius: radius,
-        backgroundColor: '#E9ECF0',
-      }}
-    />
-  );
+function catIcon(name: string): React.ComponentProps<typeof Ionicons>['name'] {
+  const lower = name.toLowerCase();
+  for (const k of Object.keys(CAT_MAP)) if (lower.includes(k)) return CAT_MAP[k];
+  return 'grid-outline';
 }
 
-function SkeletonProductCard({ width }: { width: number }) {
+// ─── Skeleton ─────────────────────────────────────────
+
+function Bone({ w, h, r = 8 }: { w?: number | string; h: number; r?: number }) {
+  return <View style={{ width: (w as number) ?? '100%', height: h, borderRadius: r, backgroundColor: '#E5E7EB' }} />;
+}
+
+function SkeletonCard({ width }: { width: number }) {
   return (
-    <View
-      style={{
-        width,
-        backgroundColor: '#FFF',
-        borderRadius: 16,
-        overflow: 'hidden',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-      }}
-    >
-      <Skeleton h={width} radius={0} />
-      <View style={{ padding: 10, gap: 7 }}>
-        <Skeleton h={11} />
-        <Skeleton w="65%" h={10} />
-        <Skeleton w="45%" h={14} />
+    <View style={[SK.card, { width }]}>
+      <Bone h={width} r={0} />
+      <View style={{ padding: 12, gap: 7 }}>
+        <Bone w="42%" h={9} />
+        <Bone h={13} />
+        <Bone w="60%" h={11} />
+        <Bone w="36%" h={16} />
+      </View>
+    </View>
+  );
+}
+function SkeletonGrid({ rows = 2 }: { rows?: number }) {
+  return (
+    <View style={{ gap: GAP }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <View key={i} style={S.gridRow}>
+          <SkeletonCard width={CARD_W} />
+          <SkeletonCard width={CARD_W} />
+        </View>
+      ))}
+    </View>
+  );
+}
+function SkeletonTrend() {
+  return (
+    <View style={SK.trend}>
+      <Bone h={160} r={0} />
+      <View style={{ padding: 10, gap: 6 }}>
+        <Bone h={12} /><Bone w="55%" h={11} /><Bone w="40%" h={14} />
       </View>
     </View>
   );
 }
 
-function SkeletonTrendingCard() {
-  return (
-    <View
-      style={{
-        width: 148,
-        backgroundColor: '#FFF',
-        borderRadius: 16,
-        overflow: 'hidden',
-        marginRight: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-      }}
-    >
-      <Skeleton h={148} radius={0} />
-      <View style={{ padding: 10, gap: 7 }}>
-        <Skeleton h={11} />
-        <Skeleton w="55%" h={13} />
-      </View>
-    </View>
-  );
-}
+const SK = StyleSheet.create({
+  card: { backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  trend: { width: 160, backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', marginRight: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+});
 
-// ─────────────────── Section Header ─────────────────
+// ─── Section Header ───────────────────────────────────
+
+type IonName = React.ComponentProps<typeof Ionicons>['name'];
 
 function SectionHeader({
-  title,
-  count,
-  onMore,
+  icon, title, count, onMore,
 }: {
-  title: string;
-  count?: number;
-  onMore?: () => void;
+  icon: IonName; title: string; count?: number; onMore?: () => void;
 }) {
   return (
-    <View style={styles.sectionHeader}>
-      <View style={{ gap: 1 }}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {count != null && count > 0 && (
-          <Text style={styles.sectionCount}>{count} sản phẩm</Text>
-        )}
+    <View style={S.secRow}>
+      <View style={S.secLeft}>
+        <View style={S.secIconBox}>
+          <Ionicons name={icon} size={13} color={C.primary} />
+        </View>
+        <View>
+          <Text style={S.secTitle}>{title}</Text>
+          {count != null && count > 0 && <Text style={S.secCount}>{count} sản phẩm</Text>}
+        </View>
       </View>
       {onMore && (
-        <TouchableOpacity onPress={onMore} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.seeMore}>Xem thêm →</Text>
+        <TouchableOpacity onPress={onMore} style={S.secMore} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={S.secMoreText}>Xem thêm</Text>
+          <Ionicons name="chevron-forward" size={13} color={C.primary} />
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-// ─────────────────── Promo Banner Card ──────────────
+// ─── Promo Banner Card ────────────────────────────────
 
 function PromoBannerCard({ promo, index }: { promo: Promotion; index: number }) {
-  const palette = PROMO_PALETTE[index % PROMO_PALETTE.length];
-  const isPercent = promo.type === 'PERCENTAGE';
-  const discountLabel = isPercent ? `${promo.value}%` : `$${promo.value}`;
-
-  function handlePress() {
-    Alert.alert(
-      '🎟️ Mã giảm giá',
-      `${promo.code}\n\n${promo.description || (isPercent
-        ? `Giảm ${promo.value}%${promo.minOrderAmount ? ` cho đơn từ $${promo.minOrderAmount}` : ''}`
-        : `Giảm $${promo.value}${promo.minOrderAmount ? ` cho đơn từ $${promo.minOrderAmount}` : ''}`
-      )}\n\nSao chép mã trên để dùng khi thanh toán.`,
-      [{ text: 'Đóng', style: 'cancel' }],
-    );
-  }
+  const theme = PROMO_THEMES[index % PROMO_THEMES.length];
+  const isPct = promo.type === 'PERCENTAGE';
+  const label = isPct ? `${promo.value}%` : `$${promo.value}`;
 
   return (
     <TouchableOpacity
-      style={[styles.promoBannerCard, { backgroundColor: palette.bg }]}
+      style={[S.promoBanner, { backgroundColor: theme.bg, width: PROMO_W }]}
       activeOpacity={0.88}
-      onPress={handlePress}
+      onPress={() =>
+        Alert.alert(
+          promo.code,
+          promo.description ||
+            (isPct
+              ? `Giảm ${promo.value}% tất cả đơn hàng${promo.minOrderAmount ? ` từ $${promo.minOrderAmount}` : ''}`
+              : `Giảm $${promo.value}${promo.minOrderAmount ? ` cho đơn từ $${promo.minOrderAmount}` : ''}`),
+          [{ text: 'Đóng' }],
+        )
+      }
     >
-      {/* Decorative circle */}
-      <View
-        style={[
-          styles.promoDecorCircle,
-          { backgroundColor: palette.accent },
-        ]}
-      />
-      <View style={[styles.promoDecorCircle2, { backgroundColor: palette.accent }]} />
+      <View style={[S.promoBlob1, { backgroundColor: theme.blob }]} />
+      <View style={[S.promoBlob2, { backgroundColor: theme.blob }]} />
 
-      <View style={styles.promoBody}>
-        {/* Left */}
-        <View style={styles.promoLeft}>
-          <Text style={[styles.promoCode, { color: palette.text }]}>{promo.code}</Text>
-          <Text style={[styles.promoDesc, { color: palette.sub }]} numberOfLines={2}>
-            {promo.description ||
-              (isPercent
-                ? `Giảm ${promo.value}%${promo.minOrderAmount ? ` đơn từ $${promo.minOrderAmount}` : ''}`
-                : `Giảm $${promo.value}${promo.minOrderAmount ? ` đơn từ $${promo.minOrderAmount}` : ''}`)}
-          </Text>
-          {promo.validUntil && (
-            <Text style={[styles.promoExpiry, { color: palette.sub }]}>
-              HSD: {new Date(promo.validUntil).toLocaleDateString('vi-VN')}
-            </Text>
-          )}
-          <View style={[styles.tapHint, { borderColor: palette.text + '60' }]}>
-            <Text style={[styles.tapHintText, { color: palette.text }]}>Nhấn xem mã</Text>
+      {/* Left */}
+      <View style={S.promoLeft}>
+        <View style={S.promoCodePill}>
+          <Ionicons name="ticket-outline" size={11} color={theme.bg} />
+          <Text style={[S.promoCode, { color: theme.bg }]}>{promo.code}</Text>
+        </View>
+        <Text style={S.promoDesc} numberOfLines={2}>
+          {promo.description || (isPct ? `Giảm ${promo.value}% cho tất cả đơn hàng` : `Tiết kiệm $${promo.value} ngay hôm nay`)}
+        </Text>
+        {promo.validUntil && (
+          <View style={S.promoExpiry}>
+            <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.65)" />
+            <Text style={S.promoExpiryText}>HSD: {new Date(promo.validUntil).toLocaleDateString('vi-VN')}</Text>
           </View>
+        )}
+        <View style={S.promoHint}>
+          <Text style={S.promoHintText}>Nhấn để xem mã</Text>
+          <Ionicons name="arrow-forward-outline" size={11} color="rgba(255,255,255,0.8)" />
         </View>
+      </View>
 
-        {/* Right — discount value */}
-        <View style={styles.promoRight}>
-          <Text style={[styles.promoDiscountValue, { color: palette.text }]}>
-            {discountLabel}
-          </Text>
-          <Text style={[styles.promoOffLabel, { color: palette.sub }]}>OFF</Text>
-        </View>
+      {/* Right — big discount number */}
+      <View style={S.promoRight}>
+        <Text style={S.promoValue}>{label}</Text>
+        <Text style={S.promoOff}>OFF</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-// ─────────────────── Default Hero ───────────────────
+// ─── Promo auto-scroll ────────────────────────────────
 
-function HeroBanner({ userName }: { userName?: string }) {
+function PromoSection({ promotions }: { promotions: Promotion[] }) {
+  const flatRef = useRef<FlatList>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const idxRef = useRef(0);
+
+  useEffect(() => {
+    if (promotions.length <= 1) return;
+    const t = setInterval(() => {
+      const next = (idxRef.current + 1) % promotions.length;
+      flatRef.current?.scrollToIndex({ index: next, animated: true });
+      idxRef.current = next;
+      setActiveIdx(next);
+    }, 3600);
+    return () => clearInterval(t);
+  }, [promotions.length]);
+
+  function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const i = Math.round(e.nativeEvent.contentOffset.x / PROMO_W);
+    if (i !== idxRef.current) { idxRef.current = i; setActiveIdx(i); }
+  }
+
   return (
-    <View style={styles.heroBanner}>
-      <View style={styles.heroBannerDecor} />
-      <View style={{ flex: 1, gap: 6, zIndex: 1 }}>
-        <Text style={styles.heroTitle}>
-          {userName ? `Xin chào, ${userName}! 👋` : 'Chào mừng đến MALL! 🛍️'}
-        </Text>
-        <Text style={styles.heroSubtitle}>
-          Khám phá hàng ngàn sản phẩm chất lượng từ các thương hiệu uy tín.
-        </Text>
-        <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>✨ Miễn phí giao hàng từ $50</Text>
-        </View>
-      </View>
-      <Text style={styles.heroEmoji}>🏪</Text>
-    </View>
-  );
-}
-
-// ─────────────────── Category Chip ──────────────────
-
-function CategoryChip({
-  cat,
-  selected,
-  onPress,
-}: {
-  cat: Category;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.catChip, selected && styles.catChipSelected]}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
-      {!!cat.icon && <Text style={styles.catIcon}>{cat.icon}</Text>}
-      <Text style={[styles.catName, selected && styles.catNameSelected]}>{cat.name}</Text>
-      {cat.productCount > 0 && (
-        <View style={[styles.catBadge, selected && styles.catBadgeSelected]}>
-          <Text style={[styles.catBadgeText, selected && styles.catBadgeTextSelected]}>
-            {cat.productCount > 99 ? '99+' : cat.productCount}
-          </Text>
+    <View style={S.promoSection}>
+      <SectionHeader icon="ticket-outline" title="Ưu đãi đặc biệt" />
+      <FlatList
+        ref={flatRef}
+        data={promotions}
+        keyExtractor={(p) => p.id}
+        horizontal pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={PROMO_W} snapToAlignment="start"
+        decelerationRate="fast"
+        onScroll={onScroll} scrollEventThrottle={16}
+        renderItem={({ item, index }) => <PromoBannerCard promo={item} index={index} />}
+        getItemLayout={(_, i) => ({ length: PROMO_W, offset: PROMO_W * i, index: i })}
+      />
+      {promotions.length > 1 && (
+        <View style={S.dots}>
+          {promotions.map((_, i) => (
+            <View key={i} style={[S.dot, i === activeIdx && S.dotActive]} />
+          ))}
         </View>
       )}
+    </View>
+  );
+}
+
+// ─── Hero Banner ──────────────────────────────────────
+
+function HeroBanner({ firstName }: { firstName?: string }) {
+  return (
+    <View style={S.hero}>
+      <View style={S.heroCircle1} />
+      <View style={S.heroCircle2} />
+      <View style={{ flex: 1, gap: 8, zIndex: 1 }}>
+        <Text style={S.heroTitle}>{firstName ? `Chào mừng, ${firstName}!` : 'Chào mừng đến MALL!'}</Text>
+        <Text style={S.heroSub}>Hàng ngàn sản phẩm chất lượng từ các thương hiệu uy tín.</Text>
+        <View style={S.heroBadge}>
+          <Ionicons name="car-outline" size={12} color={C.primary} />
+          <Text style={S.heroBadgeText}>Miễn phí giao hàng từ $50</Text>
+        </View>
+      </View>
+      <View style={S.heroIllust}>
+        <Ionicons name="storefront-outline" size={52} color={C.primary} style={{ opacity: 0.18 }} />
+      </View>
+    </View>
+  );
+}
+
+// ─── Category Chip ────────────────────────────────────
+
+function CategoryChip({ cat, selected, onPress }: { cat: Category; selected: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={[S.chip, selected && S.chipActive]} onPress={onPress} activeOpacity={0.72}>
+      <View style={[S.chipIcon, selected && S.chipIconActive]}>
+        <Ionicons name={catIcon(cat.name)} size={14} color={selected ? '#FFF' : C.primary} />
+      </View>
+      <Text style={[S.chipLabel, selected && S.chipLabelActive]} numberOfLines={1}>{cat.name}</Text>
     </TouchableOpacity>
   );
 }
 
-// ─────────────────── Product Grid (2-col) ───────────
+// ─── Product Grid ─────────────────────────────────────
 
 function ProductGrid({ products }: { products: Product[] }) {
-  const rows: [Product, Product | null][] = [];
-  for (let i = 0; i < products.length; i += 2) {
-    rows.push([products[i], products[i + 1] ?? null]);
-  }
   return (
-    <View style={{ gap: GRID_GAP }}>
-      {rows.map((pair, i) => (
-        <View key={i} style={styles.gridRow}>
-          <ProductCard product={pair[0]} width={CARD_W} />
-          {pair[1] ? (
-            <ProductCard product={pair[1]} width={CARD_W} />
-          ) : (
-            <View style={{ width: CARD_W }} />
-          )}
+    <View style={{ gap: GAP }}>
+      {Array.from({ length: Math.ceil(products.length / 2) }).map((_, r) => (
+        <View key={r} style={S.gridRow}>
+          <ProductCard product={products[r * 2]} width={CARD_W} />
+          {products[r * 2 + 1]
+            ? <ProductCard product={products[r * 2 + 1]} width={CARD_W} />
+            : <View style={{ width: CARD_W }} />}
         </View>
       ))}
     </View>
   );
 }
 
-function SkeletonProductGrid({ rows = 2 }: { rows?: number }) {
+// ─── Empty State ──────────────────────────────────────
+
+function EmptyState({ icon, title, sub }: { icon: IonName; title: string; sub?: string }) {
   return (
-    <View style={{ gap: GRID_GAP }}>
-      {Array.from({ length: rows }).map((_, i) => (
-        <View key={i} style={styles.gridRow}>
-          <SkeletonProductCard width={CARD_W} />
-          <SkeletonProductCard width={CARD_W} />
-        </View>
-      ))}
+    <View style={S.empty}>
+      <View style={S.emptyBox}>
+        <Ionicons name={icon} size={30} color="#D1D5DB" />
+      </View>
+      <Text style={S.emptyTitle}>{title}</Text>
+      {sub && <Text style={S.emptySub}>{sub}</Text>}
     </View>
   );
 }
 
-// ─────────────────── Empty State ────────────────────
-
-function EmptyState({ emoji, title, subtitle }: { emoji: string; title: string; subtitle?: string }) {
-  return (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyEmoji}>{emoji}</Text>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      {subtitle && <Text style={styles.emptySubtitle}>{subtitle}</Text>}
-    </View>
-  );
-}
-
-// ─────────────────── HomeScreen ─────────────────────
+// ─── HomeScreen ───────────────────────────────────────
 
 export function HomeScreen() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedCat, setSelectedCat] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch]             = useState('');
+  const [debouncedSearch, setDebounced] = useState('');
+  const [selectedCat, setSelectedCat]   = useState<string | null>(null);
+  const [refreshing, setRefreshing]     = useState(false);
 
-  // Debounce search input 400ms
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    const t = setTimeout(() => setDebounced(search.trim()), 400);
     return () => clearTimeout(t);
   }, [search]);
 
   const isFiltered = debouncedSearch.length > 0 || selectedCat !== null;
 
-  // Data queries
-  const { data: categories } = useCategories();
-  const { data: promotions, isLoading: promoLoading } = usePromotions();
-
-  const { data: featuredData, isLoading: featuredLoading } = useProducts(
-    { featured: true, limit: 6 },
-    !isFiltered,
-  );
-  const { data: trendingData, isLoading: trendingLoading } = useProducts(
-    { trending: true, limit: 8 },
-    !isFiltered,
-  );
+  const { data: categories }                               = useCategories();
+  const { data: promotions, isLoading: promoLoading }      = usePromotions();
+  const { data: featuredData, isLoading: featuredLoading } = useProducts({ featured: true, limit: 6 }, !isFiltered);
+  const { data: trendingData, isLoading: trendingLoading } = useProducts({ trending: true, limit: 8 }, !isFiltered);
   const { data: filteredData, isLoading: filteredLoading } = useProducts(
-    {
-      search: debouncedSearch || undefined,
-      category: selectedCat || undefined,
-      limit: 20,
-    },
+    { search: debouncedSearch || undefined, category: selectedCat || undefined, limit: 20 },
     isFiltered,
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['products'] });
-    await queryClient.invalidateQueries({ queryKey: ['categories'] });
-    await queryClient.invalidateQueries({ queryKey: ['promotions'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['products'] }),
+      queryClient.invalidateQueries({ queryKey: ['categories'] }),
+      queryClient.invalidateQueries({ queryKey: ['promotions'] }),
+    ]);
     setRefreshing(false);
   }, [queryClient]);
 
   function handleCatPress(id: string) {
-    setSelectedCat((prev) => (prev === id ? null : id));
-    setSearch('');
-    setDebouncedSearch('');
-  }
-
-  function clearSearch() {
-    setSearch('');
-    setDebouncedSearch('');
+    setSelectedCat((p) => (p === id ? null : id));
+    setSearch(''); setDebounced('');
   }
 
   const firstName = user?.name?.split(' ')[0];
 
-  // ── render ──────────────────────────────────────
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={S.safe} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
         keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#1A56DB"
-            colors={['#1A56DB']}
-          />
-        }
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} colors={[C.primary]} />}
       >
-        {/* ════ STICKY HEADER ════ */}
-        <View style={styles.stickyTop}>
-          {/* Top row: greeting + logo */}
-          <View style={styles.topRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.greeting} numberOfLines={1}>
-                {firstName ? `Xin chào, ${firstName} 👋` : 'Xin chào! 👋'}
-              </Text>
-              <Text style={styles.tagline}>Hôm nay bạn muốn mua gì?</Text>
+
+        {/* ══════════════════ HEADER ══════════════════ */}
+        <View style={S.header}>
+
+          {/* Row 1 — Brand + Greeting + Actions */}
+          <View style={S.hRow}>
+
+            {/* Logo mark */}
+            <View style={S.logoMark}>
+              <Text style={S.logoText}>M</Text>
             </View>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoLetter}>M</Text>
+
+            {/* Greeting */}
+            <View style={S.hGreeting}>
+              <Text style={S.greetLabel} numberOfLines={1}>
+                {firstName ? `Xin chào, ${firstName}` : 'Xin chào, bạn'}
+              </Text>
+              <Text style={S.greetSub}>Hôm nay bạn muốn mua gì?</Text>
+            </View>
+
+            {/* Action icons */}
+            <View style={S.hActions}>
+              <TouchableOpacity style={S.hIconBtn}>
+                <Ionicons name="cart-outline" size={20} color={C.text} />
+              </TouchableOpacity>
+              <TouchableOpacity style={S.hIconBtn}>
+                <Ionicons name="notifications-outline" size={20} color={C.text} />
+                <View style={S.notifBadge} />
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Search bar */}
-          <View style={styles.searchBar}>
-            <Text style={styles.searchIconTxt}>🔍</Text>
+          {/* Row 2 — Search */}
+          <View style={S.searchBar}>
+            <Ionicons name="search-outline" size={16} color={C.primary} />
             <TextInput
-              style={styles.searchInput}
-              placeholder="Tìm kiếm sản phẩm..."
-              placeholderTextColor="#9CA3AF"
+              style={S.searchInput}
+              placeholder="Tìm sản phẩm, thương hiệu..."
+              placeholderTextColor={C.textMuted}
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
               autoCorrect={false}
               autoCapitalize="none"
             />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Text style={styles.clearTxt}>✕</Text>
+            {search.length > 0 ? (
+              <TouchableOpacity
+                onPress={() => { setSearch(''); setDebounced(''); }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={17} color={C.textMuted} />
               </TouchableOpacity>
+            ) : (
+              <View style={S.filterWrap}>
+                <View style={S.filterDivider} />
+                <TouchableOpacity style={S.filterBtn}>
+                  <Ionicons name="options-outline" size={15} color={C.primary} />
+                  <Text style={S.filterLabel}>Lọc</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>
+        {/* ═══════════════ END HEADER ═══════════════ */}
 
-        {/* ════ CATEGORIES ════ */}
+
+        {/* ── CATEGORIES ──────────────────────────────── */}
         {categories && categories.length > 0 && (
-          <View style={styles.catsWrapper}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.catsScroll}
-            >
-              {/* "Tất cả" reset chip */}
+          <View style={S.catsWrap}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.catsScroll}>
               {selectedCat !== null && (
                 <TouchableOpacity
-                  style={[styles.catChip, styles.catChipSelected]}
+                  style={[S.chip, S.chipActive, S.chipReset]}
                   onPress={() => setSelectedCat(null)}
-                  activeOpacity={0.75}
+                  activeOpacity={0.72}
                 >
-                  <Text style={[styles.catName, styles.catNameSelected]}>✕ Tất cả</Text>
+                  <Ionicons name="close-outline" size={14} color={C.primary} />
+                  <Text style={[S.chipLabel, S.chipLabelActive]}>Tất cả</Text>
                 </TouchableOpacity>
               )}
               {categories.map((cat) => (
                 <CategoryChip
-                  key={cat.id}
-                  cat={cat}
+                  key={cat.id} cat={cat}
                   selected={selectedCat === cat.id}
                   onPress={() => handleCatPress(cat.id)}
                 />
@@ -431,391 +463,362 @@ export function HomeScreen() {
         )}
 
         {isFiltered ? (
-          /* ════ SEARCH / FILTER RESULTS ════ */
-          <View style={styles.section}>
+
+          /* ── SEARCH RESULTS ─────────────────────────── */
+          <View style={S.section}>
             <SectionHeader
-              title={debouncedSearch ? `"${debouncedSearch}"` : 'Sản phẩm'}
+              icon="search-outline"
+              title={debouncedSearch ? `"${debouncedSearch}"` : 'Kết quả lọc'}
               count={filteredData?.total}
             />
-            {filteredLoading ? (
-              <SkeletonProductGrid rows={3} />
-            ) : !filteredData?.products.length ? (
-              <EmptyState
-                emoji="🔍"
-                title="Không tìm thấy kết quả"
-                subtitle="Thử từ khóa khác hoặc chọn danh mục khác"
-              />
-            ) : (
-              <ProductGrid products={filteredData.products} />
-            )}
+            {filteredLoading
+              ? <SkeletonGrid rows={3} />
+              : !filteredData?.products?.length
+                ? <EmptyState icon="search-outline" title="Không tìm thấy kết quả" sub="Thử từ khóa hoặc danh mục khác" />
+                : <ProductGrid products={filteredData.products} />}
           </View>
+
         ) : (
           <>
-            {/* ════ PROMOTIONS / HERO ════ */}
-            <View style={styles.section}>
+
+            {/* ── PROMO / HERO ─────────────────────────── */}
+            <View style={S.section}>
               {promoLoading ? (
-                <View style={styles.promoScroll}>
-                  <Skeleton h={120} radius={20} />
+                <View style={{ gap: 14 }}>
+                  <Bone w="46%" h={17} />
+                  <Bone h={130} r={16} />
                 </View>
               ) : promotions && promotions.length > 0 ? (
-                <>
-                  <SectionHeader title="🎟️ Khuyến mãi" />
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    decelerationRate="fast"
-                    snapToInterval={W - H_PAD * 2 - 24 + 12}
-                    snapToAlignment="start"
-                    contentContainerStyle={styles.promoScroll}
-                  >
-                    {promotions.map((p, i) => (
-                      <PromoBannerCard key={p.id} promo={p} index={i} />
-                    ))}
-                  </ScrollView>
-                </>
+                <PromoSection promotions={promotions} />
               ) : (
-                <HeroBanner userName={firstName} />
+                <HeroBanner firstName={firstName} />
               )}
             </View>
 
-            {/* ════ FEATURED ════ */}
-            <View style={styles.section}>
-              <SectionHeader title="⭐ Nổi bật" count={featuredData?.total} />
-              {featuredLoading ? (
-                <SkeletonProductGrid rows={2} />
-              ) : !featuredData?.products.length ? (
-                <EmptyState emoji="📦" title="Chưa có sản phẩm nổi bật" />
-              ) : (
-                <ProductGrid products={featuredData.products} />
-              )}
+            {/* ── FEATURED ─────────────────────────────── */}
+            <View style={S.section}>
+              <SectionHeader icon="star-outline" title="Nổi bật" count={featuredData?.total} onMore={() => {}} />
+              {featuredLoading
+                ? <SkeletonGrid rows={2} />
+                : !featuredData?.products?.length
+                  ? <EmptyState icon="cube-outline" title="Chưa có sản phẩm nổi bật" />
+                  : <ProductGrid products={featuredData.products} />}
             </View>
 
-            {/* ════ TRENDING ════ */}
-            <View style={styles.section}>
-              <SectionHeader title="🔥 Xu hướng" />
+            {/* ── TRENDING ─────────────────────────────── */}
+            <View style={S.section}>
+              <SectionHeader icon="trending-up-outline" title="Xu hướng" onMore={() => {}} />
               {trendingLoading ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {[0, 1, 2, 3].map((i) => (
-                    <SkeletonTrendingCard key={i} />
-                  ))}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                  {[0, 1, 2, 3].map((i) => <SkeletonTrend key={i} />)}
                 </ScrollView>
-              ) : !trendingData?.products.length ? (
-                <EmptyState emoji="📈" title="Chưa có sản phẩm xu hướng" />
+              ) : !trendingData?.products?.length ? (
+                <EmptyState icon="trending-up-outline" title="Chưa có sản phẩm xu hướng" />
               ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.trendingScroll}
-                >
-                  {trendingData.products.map((p) => (
-                    <TrendingCard key={p.id} product={p} />
-                  ))}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 4 }}>
+                  {trendingData.products.map((p) => <TrendingCard key={p.id} product={p} />)}
                 </ScrollView>
               )}
             </View>
+
           </>
         )}
 
-        {/* Bottom space for tab bar */}
-        <View style={{ height: 16 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F4F6FA' },
+// ─── Styles ───────────────────────────────────────────
 
-  // ── Sticky top ──────────────────────────────────
-  stickyTop: {
-    backgroundColor: '#FFFFFF',
+const S = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
+
+  // ════ HEADER ════════════════════════════════════════
+
+  header: {
+    backgroundColor: C.surface,
     paddingHorizontal: H_PAD,
-    paddingTop: 14,
-    paddingBottom: 12,
-    gap: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
+    gap: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 8,
     zIndex: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: C.primary,
   },
-  topRow: {
+
+  // Row 1: logo + greeting + actions
+  hRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  greeting: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  tagline: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  logoBox: {
-    width: 44,
-    height: 44,
+
+  // Logo mark
+  logoMark: {
+    width: 46,
+    height: 46,
     borderRadius: 14,
-    backgroundColor: '#1A56DB',
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1A56DB',
+    flexShrink: 0,
+    shadowColor: C.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.38,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  logoLetter: {
-    fontSize: 20,
+  logoText: {
+    fontSize: 22,
     fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
+    color: '#FFF',
+    letterSpacing: -0.5,
+    includeFontPadding: false,
   },
+
+  // Greeting
+  hGreeting: {
+    flex: 1,
+    gap: 3,
+  },
+  greetLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: C.text,
+    letterSpacing: -0.2,
+    includeFontPadding: false,
+  },
+  greetSub: {
+    fontSize: 12,
+    color: C.textSub,
+    includeFontPadding: false,
+  },
+
+  // Action buttons
+  hActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  hIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: C.inputBg,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: C.danger,
+    borderWidth: 1.5,
+    borderColor: C.surface,
+  },
+
+  // Row 2: search
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    backgroundColor: C.inputBg,
+    borderRadius: 12,
+    paddingLeft: 14,
+    paddingRight: 8,
+    paddingVertical: 12,
     gap: 10,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  searchIconTxt: { fontSize: 15 },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: '#1F2937',
+    fontSize: 14,
+    color: C.text,
     padding: 0,
     margin: 0,
   },
-  clearTxt: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    fontWeight: '600',
+  filterWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  filterDivider: { width: 1, height: 16, backgroundColor: C.border },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: C.primaryLight,
   },
+  filterLabel: { fontSize: 12, fontWeight: '700', color: C.primary },
 
-  // ── Categories ───────────────────────────────────
-  catsWrapper: {
-    backgroundColor: '#FFFFFF',
+  // ════ CATEGORIES ════════════════════════════════════
+
+  catsWrap: {
+    backgroundColor: C.surface,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: C.border,
   },
   catsScroll: {
     paddingHorizontal: H_PAD,
-    gap: 8,
-    flexDirection: 'row',
-  },
-  catChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 13,
+    gap: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 7,
+    paddingRight: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    backgroundColor: C.inputBg,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  catChipSelected: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#1A56DB',
-  },
-  catIcon: { fontSize: 14 },
-  catName: { fontSize: 13, fontWeight: '500', color: '#6B7280' },
-  catNameSelected: { color: '#1A56DB', fontWeight: '700' },
-  catBadge: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    minWidth: 20,
+  chipActive: { backgroundColor: C.primaryLight, borderColor: C.primary },
+  chipReset: { paddingLeft: 10 },
+  chipIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: C.primaryLight,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  catBadgeSelected: { backgroundColor: '#BFDBFE' },
-  catBadgeText: { fontSize: 10, fontWeight: '600', color: '#9CA3AF' },
-  catBadgeTextSelected: { color: '#1A56DB' },
+  chipIconActive: { backgroundColor: C.primary },
+  chipLabel: { fontSize: 12, fontWeight: '500', color: C.textSub, maxWidth: 88 },
+  chipLabelActive: { color: C.primary, fontWeight: '700' },
 
-  // ── Sections ─────────────────────────────────────
-  section: {
-    paddingTop: 20,
-    paddingHorizontal: H_PAD,
-  },
-  sectionHeader: {
+  // ════ SECTIONS ══════════════════════════════════════
+
+  section: { paddingTop: 22, paddingHorizontal: H_PAD },
+
+  secRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1F2937',
+  secLeft: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  secIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: C.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sectionCount: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 2,
+  secTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: C.text,
+    letterSpacing: -0.3,
   },
-  seeMore: {
-    fontSize: 13,
-    color: '#1A56DB',
-    fontWeight: '600',
-    marginTop: 3,
-  },
+  secCount: { fontSize: 11, color: C.textMuted, marginTop: 1 },
+  secMore: { flexDirection: 'row', alignItems: 'center', gap: 1, paddingTop: 5 },
+  secMoreText: { fontSize: 12, fontWeight: '600', color: C.primary },
 
-  // ── Grid ─────────────────────────────────────────
-  gridRow: {
-    flexDirection: 'row',
-    gap: GRID_GAP,
-  },
+  // ════ GRID ══════════════════════════════════════════
+  gridRow: { flexDirection: 'row', gap: GAP },
 
-  // ── Promo banners ─────────────────────────────────
-  promoScroll: {
-    gap: 12,
-    paddingBottom: 2,
-  },
-  promoBannerCard: {
-    width: W - H_PAD * 2 - 24,
-    borderRadius: 20,
-    padding: 22,
+  // ════ PROMO ═════════════════════════════════════════
+
+  promoSection: { gap: 0 },
+  promoBanner: {
+    height: 136,
+    borderRadius: 16,
+    padding: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-    elevation: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    shadowColor: '#1A56DB',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 7,
   },
-  promoDecorCircle: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    right: -40,
-    top: -40,
+  promoBlob1: {
+    position: 'absolute', width: 140, height: 140,
+    borderRadius: 70, right: -30, top: -42,
   },
-  promoDecorCircle2: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    right: 40,
-    bottom: -50,
+  promoBlob2: {
+    position: 'absolute', width: 100, height: 100,
+    borderRadius: 50, right: 48, bottom: -52,
   },
-  promoBody: {
+  promoLeft: { flex: 1, gap: 6, zIndex: 1 },
+  promoCodePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    alignSelf: 'flex-start', backgroundColor: '#FFF',
+    paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8,
+  },
+  promoCode: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  promoDesc: { fontSize: 13, color: 'rgba(255,255,255,0.88)', lineHeight: 19 },
+  promoExpiry: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  promoExpiryText: { fontSize: 11, color: 'rgba(255,255,255,0.65)' },
+  promoHint: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  promoHintText: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.8)' },
+  promoRight: { alignItems: 'center', zIndex: 1, minWidth: 64 },
+  promoValue: { fontSize: 34, fontWeight: '900', color: '#FFF', lineHeight: 38, letterSpacing: -1 },
+  promoOff: { fontSize: 12, fontWeight: '800', color: 'rgba(255,255,255,0.75)', letterSpacing: 3 },
+  dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, marginTop: 12 },
+  dot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#D1D5DB' },
+  dotActive: { width: 20, height: 5, borderRadius: 2.5, backgroundColor: C.primary },
+
+  // ════ HERO ══════════════════════════════════════════
+
+  hero: {
+    backgroundColor: C.primaryLight,
+    borderRadius: 16,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-  },
-  promoLeft: { flex: 1, gap: 5, zIndex: 1 },
-  promoCode: {
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-  },
-  promoDesc: {
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  promoExpiry: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  tapHint: {
-    alignSelf: 'flex-start',
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1.5,
-  },
-  tapHintText: { fontSize: 11, fontWeight: '600' },
-  promoRight: {
-    alignItems: 'center',
-    zIndex: 1,
-    minWidth: 70,
-  },
-  promoDiscountValue: {
-    fontSize: 34,
-    fontWeight: '900',
-    lineHeight: 38,
-  },
-  promoOffLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-
-  // ── Hero Banner ───────────────────────────────────
-  heroBanner: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 20,
-    padding: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#BFDBFE',
-    overflow: 'hidden',
-    gap: 12,
   },
-  heroBannerDecor: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+  heroCircle1: {
+    position: 'absolute', width: 160, height: 160,
+    borderRadius: 80, right: -30, top: -45,
     backgroundColor: 'rgba(26,86,219,0.06)',
-    right: -30,
-    top: -40,
   },
-  heroTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    lineHeight: 23,
+  heroCircle2: {
+    position: 'absolute', width: 80, height: 80,
+    borderRadius: 40, left: -15, bottom: -25,
+    backgroundColor: 'rgba(26,86,219,0.05)',
   },
-  heroSubtitle: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 19,
-  },
+  heroTitle: { fontSize: 15, fontWeight: '800', color: C.text, lineHeight: 22, letterSpacing: -0.3 },
+  heroSub: { fontSize: 13, color: C.textSub, lineHeight: 19 },
   heroBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#DBEAFE',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    alignSelf: 'flex-start', backgroundColor: '#DBEAFE',
+    paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, marginTop: 2,
   },
-  heroBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1D4ED8',
-  },
-  heroEmoji: { fontSize: 52 },
+  heroBadgeText: { fontSize: 12, fontWeight: '600', color: C.primaryDark },
+  heroIllust: { alignItems: 'center', justifyContent: 'center', zIndex: 1 },
 
-  // ── Trending ──────────────────────────────────────
-  trendingScroll: {
-    paddingBottom: 2,
-  },
+  // ════ EMPTY ══════════════════════════════════════════
 
-  // ── Empty state ───────────────────────────────────
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 36,
-    gap: 8,
+  empty: { alignItems: 'center', paddingVertical: 40, gap: 10 },
+  emptyBox: {
+    width: 64, height: 64, borderRadius: 18,
+    backgroundColor: C.inputBg, alignItems: 'center', justifyContent: 'center',
   },
-  emptyEmoji: { fontSize: 44 },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+  emptyTitle: { fontSize: 14, fontWeight: '700', color: C.text },
+  emptySub: { fontSize: 13, color: C.textMuted, textAlign: 'center', lineHeight: 19, paddingHorizontal: 20 },
 });

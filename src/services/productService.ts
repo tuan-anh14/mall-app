@@ -21,12 +21,12 @@ export const productService = {
 
   getCategories: async (): Promise<Category[]> => {
     const res = await api.get<{ categories: Category[] }>('/api/v1/categories');
-    return res.data.categories;
+    return res.data.categories ?? [];
   },
 
   getPromotions: async (): Promise<Promotion[]> => {
     const res = await api.get<{ promotions: Promotion[] }>('/api/v1/products/promotions');
-    return res.data.promotions;
+    return res.data.promotions ?? [];
   },
 
   getProductById: async (id: string): Promise<Product> => {

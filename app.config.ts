@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'MallApp',
   slug: 'mall-app',
+  scheme: 'mallapp',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './src/assets/icon.png',
