@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAddressesQuery, useProfileMutations } from '@hooks/useProfile';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
-import type { ShippingAddress } from '@types/profile';
+import type { ShippingAddress } from '@typings/profile';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Addresses'>;

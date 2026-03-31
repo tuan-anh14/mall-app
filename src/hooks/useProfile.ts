@@ -6,7 +6,7 @@ import {
   type UpdateProfileDto,
   type ChangePasswordDto,
 } from '@services/userService';
-import type { CreateAddressDto, UpdateAddressDto, UpdateSettingsDto } from '@types/profile';
+import type { CreateAddressDto, UpdateAddressDto, UpdateSettingsDto } from '@typings/profile';
 import { QUERY_KEYS } from '@constants/queryKeys';
 
 export const PROFILE_QUERY_KEY   = QUERY_KEYS.profile;

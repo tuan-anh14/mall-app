@@ -7,7 +7,7 @@ import type {
   UpdateAddressDto,
   UserSettings,
   UpdateSettingsDto,
-} from '@types/profile';
+} from '@typings/profile';
 
 export interface UpdateProfileDto {
   firstName: string;

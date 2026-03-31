@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity } from 'react-native';
 import { Colors } from '@constants/theme';
-import { TabParamList } from './types';
+import { type TabParamList } from './types';
 import { HomeScreen } from '@screens/HomeScreen';
 import { SearchScreen } from '@screens/SearchScreen';
 import { CartScreen } from '@screens/CartScreen';
@@ -31,7 +31,7 @@ const TABS: Record<keyof TabParamList, TabCfg> = {
   Profile:  { label: 'Hồ sơ',     icon: 'person-circle-outline', iconActive: 'person-circle-sharp' },
 };
 
-const SCREENS: Record<keyof TabParamList, React.ComponentType<any>> = {
+const SCREENS: Record<keyof TabParamList, React.ComponentType<object>> = {
   Home:     HomeScreen,
   Search:   SearchScreen,
   Cart:     CartScreen,

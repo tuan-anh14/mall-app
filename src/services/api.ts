@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { Config } from '@constants/config';
 import { secureStorage } from '@services/secureStorage';
 import { authEvents } from '@services/authEvents';

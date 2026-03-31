@@ -4,7 +4,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ViewStyle,
+  type ViewStyle,
 } from 'react-native';
 import { Colors } from '@constants/theme';
 

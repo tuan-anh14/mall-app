@@ -10,8 +10,8 @@ import {
   Dimensions,
   RefreshControl,
   Alert,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +21,7 @@ import { useCategories, usePromotions, useProducts } from '@hooks/useHome';
 import { ProductCard, TrendingCard } from '@components/product/ProductCard';
 import { Colors } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
-import type { Product, Category, Promotion } from '@types/product';
+import type { Product, Category, Promotion } from '@typings/product';
 
 const { width: W } = Dimensions.get('window');
 const H_PAD   = 16;

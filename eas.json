@@ -1,40 +1,81 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "node": "20.x",
+      "cache": {
+        "disabled": false,
+        "cacheDefaultPaths": true,
+        "customPaths": ["node_modules"]
+      }
+    },
+
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
-      "env": {
-        "APP_ENV": "development"
-      }
-    },
-    "preview": {
-      "distribution": "internal",
-      "env": {
-        "APP_ENV": "preview"
-      },
+      "channel": "development",
       "android": {
+        "gradleCommand": ":app:assembleDebug",
         "buildType": "apk"
+      },
+      "ios": {
+        "buildConfiguration": "Debug",
+        "simulator": false
+      },
+      "env": {
+        "APP_ENV": "development",
+        "API_BASE_URL": "https://mall-be-dgpi.onrender.com"
       }
     },
-    "production": {
-      "distribution": "store",
-      "env": {
-        "APP_ENV": "production"
-      },
+
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "channel": "preview",
       "android": {
-        "buildType": "aab"
+        "buildType": "apk",
+        "resourceClass": "medium"
+      },
+      "ios": {
+        "buildConfiguration": "Release",
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "APP_ENV": "preview",
+        "API_BASE_URL": "https://mall-be-dgpi.onrender.com"
+      }
+    },
+
+    "production": {
+      "extends": "base",
+      "distribution": "store",
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "aab",
+        "resourceClass": "medium"
+      },
+      "ios": {
+        "buildConfiguration": "Release",
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "API_BASE_URL": "https://mall-be-dgpi.onrender.com"
       }
     }
   },
+
   "submit": {
     "production": {
       "ios": {
         "appleId": "your@email.com",
-        "ascAppId": "YOUR_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID"
+        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
+        "appleTeamId": "YOUR_APPLE_TEAM_ID"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",

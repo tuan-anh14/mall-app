@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Product, Category, Promotion, ProductsResponse } from '@types/product';
+import type { Product, Category, Promotion, ProductsResponse } from '@typings/product';
 
 export interface GetProductsParams {
   page?: number;
