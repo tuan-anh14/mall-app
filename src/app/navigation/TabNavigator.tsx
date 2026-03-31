@@ -9,7 +9,7 @@ import { type TabParamList } from './types';
 import { HomeScreen } from '@screens/HomeScreen';
 import { SearchScreen } from '@screens/SearchScreen';
 import { CartScreen } from '@screens/CartScreen';
-import { WishlistScreen } from '@screens/WishlistScreen';
+import { NotificationsScreen } from '@screens/NotificationsScreen';
 import { ProfileNavigator } from './ProfileNavigator';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -24,19 +24,19 @@ interface TabCfg {
 }
 
 const TABS: Record<keyof TabParamList, TabCfg> = {
-  Home:     { label: 'Trang chủ', icon: 'home-outline',          iconActive: 'home-sharp' },
-  Search:   { label: 'Tìm kiếm',  icon: 'search-outline',        iconActive: 'search-sharp' },
-  Cart:     { label: 'Giỏ hàng',  icon: 'cart-outline',          iconActive: 'cart-sharp',   badge: 0 },
-  Wishlist: { label: 'Yêu thích', icon: 'heart-outline',         iconActive: 'heart-sharp' },
-  Profile:  { label: 'Hồ sơ',     icon: 'person-circle-outline', iconActive: 'person-circle-sharp' },
+  Home:          { label: 'Trang chủ',  icon: 'home-outline',          iconActive: 'home-sharp' },
+  Search:        { label: 'Khám phá',   icon: 'compass-outline',       iconActive: 'compass-sharp' },
+  Cart:          { label: 'Giỏ hàng',  icon: 'cart-outline',          iconActive: 'cart-sharp',          badge: 0 },
+  Notifications: { label: 'Thông báo', icon: 'notifications-outline', iconActive: 'notifications-sharp', badge: 0 },
+  Profile:       { label: 'Tôi',        icon: 'person-outline',        iconActive: 'person-sharp' },
 };
 
 const SCREENS: Record<keyof TabParamList, React.ComponentType<object>> = {
-  Home:     HomeScreen,
-  Search:   SearchScreen,
-  Cart:     CartScreen,
-  Wishlist: WishlistScreen,
-  Profile:  ProfileNavigator,
+  Home:          HomeScreen,
+  Search:        SearchScreen,
+  Cart:          CartScreen,
+  Notifications: NotificationsScreen,
+  Profile:       ProfileNavigator,
 };
 
 // ── Custom tab button ──────────────────────────────────

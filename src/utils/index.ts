@@ -13,13 +13,23 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+const vndFormatter = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+});
+
+/** Định dạng số tiền VND (ví dụ: 1.234.567 ₫). */
+export function formatVnd(amount: number): string {
+  return vndFormatter.format(Math.round(amount));
+}
+
 /**
- * Format a number as currency
+ * Format a number as currency (mặc định VND, locale Việt Nam).
  */
 export function formatCurrency(
   amount: number,
-  currency = 'USD',
-  locale = 'en-US',
+  currency = 'VND',
+  locale = 'vi-VN',
 ): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
     amount,

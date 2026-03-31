@@ -124,7 +124,7 @@ export function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hồ sơ</Text>
+          <Text style={styles.headerTitle}>Tôi</Text>
         </View>
 
         {/* Avatar + Name */}
@@ -184,6 +184,34 @@ export function ProfileScreen() {
               )}
             </>
           )}
+        </View>
+
+        {/* Shopping */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Mua sắm</Text>
+
+          <MenuItem
+            icon="📋"
+            label="Đơn hàng của tôi"
+            sublabel="Theo dõi và quản lý đơn hàng"
+            onPress={() => navigation.navigate('Orders')}
+          />
+          <View style={styles.divider} />
+
+          <MenuItem
+            icon="❤️"
+            label="Yêu thích"
+            sublabel="Sản phẩm đã lưu"
+            onPress={() => navigation.navigate('Wishlist')}
+          />
+          <View style={styles.divider} />
+
+          <MenuItem
+            icon="💳"
+            label="Ví của tôi"
+            sublabel="Số dư và lịch sử giao dịch"
+            onPress={() => navigation.navigate('Wallet')}
+          />
         </View>
 
         {/* Account Actions */}

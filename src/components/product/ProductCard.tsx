@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Product } from '@typings/product';
+import { formatVnd } from '@utils/index';
 
 // ─── Shared helpers ───────────────────────────────────
 
@@ -107,9 +108,9 @@ export function ProductCard({ product, width, onPress }: ProductCardProps) {
         )}
 
         <View style={styles.priceRow}>
-          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+          <Text style={styles.price}>{formatVnd(product.price)}</Text>
           {hasOriginal && (
-            <Text style={styles.originalPrice}>${product.originalPrice!.toFixed(2)}</Text>
+            <Text style={styles.originalPrice}>{formatVnd(product.originalPrice!)}</Text>
           )}
         </View>
 
@@ -180,9 +181,9 @@ export function TrendingCard({ product, onPress }: TrendingCardProps) {
           <StarRow rating={product.ratingAverage} count={0} />
         )}
         <View style={tStyles.priceRow}>
-          <Text style={tStyles.price}>${product.price.toFixed(2)}</Text>
+          <Text style={tStyles.price}>{formatVnd(product.price)}</Text>
           {product.originalPrice != null && product.originalPrice > product.price && (
-            <Text style={tStyles.original}>${product.originalPrice.toFixed(2)}</Text>
+            <Text style={tStyles.original}>{formatVnd(product.originalPrice)}</Text>
           )}
         </View>
       </View>

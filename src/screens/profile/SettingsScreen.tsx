@@ -182,19 +182,6 @@ export function SettingsScreen() {
                 disabled={disabled}
               />
               <View style={styles.divider} />
-              <OptionSelector
-                label="Tiền tệ"
-                options={[
-                  { value: 'usd', label: 'USD' },
-                  { value: 'eur', label: 'EUR' },
-                  { value: 'gbp', label: 'GBP' },
-                  { value: 'jpy', label: 'JPY' },
-                ]}
-                value={s.currency}
-                onChange={(v) => select('currency', v)}
-                disabled={disabled}
-              />
-              <View style={styles.divider} />
               <SettingToggle
                 label="Gợi ý sản phẩm"
                 hint="Hiển thị sản phẩm được đề xuất cho bạn"

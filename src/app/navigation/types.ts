@@ -16,13 +16,16 @@ export type ProfileStackParamList = {
   Addresses: undefined;
   AddressForm: { addressId?: string };
   Settings: undefined;
+  Orders: undefined;
+  Wishlist: undefined;
+  Wallet: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
   Search: undefined;
   Cart: undefined;
-  Wishlist: undefined;
+  Notifications: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
