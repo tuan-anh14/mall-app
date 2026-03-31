@@ -28,6 +28,7 @@ import { QUERY_KEYS } from '@constants/queryKeys';
 import type { TabParamList } from '@app/navigation/types';
 import type { Product, Category, Promotion } from '@typings/product';
 import { formatVnd } from '@utils/index';
+import { resolveCategoryIonIcon } from '@utils/categoryIonIcon';
 
 /** Ngưỡng gợi ý miễn phí vận chuyển (đồng). */
 const FREE_SHIPPING_FROM_VND = 1_200_000;
@@ -265,12 +266,16 @@ function TrustBadges() {
 function CategoryCard({
   cat, selected, onPress,
 }: { cat: Category; selected: boolean; onPress: () => void }) {
+  const ion = resolveCategoryIonIcon(cat.icon, cat.slug);
+  const iconColor = selected ? C.primary : C.textSub;
   return (
     <TouchableOpacity
       style={[S.catCard, selected && S.catCardActive]}
       onPress={onPress} activeOpacity={0.75}
     >
-      <Text style={S.catEmoji}>{cat.icon || '🛍️'}</Text>
+      <View style={[S.catIconWrap, selected && S.catIconWrapActive]}>
+        <Ionicons name={ion} size={22} color={iconColor} />
+      </View>
       <Text style={[S.catName, selected && S.catNameActive]} numberOfLines={1}>
         {cat.name}
       </Text>
@@ -645,7 +650,11 @@ export function HomeScreen() {
                       onPress={() => handleCatPress(cat.id)}
                       activeOpacity={0.72}
                     >
-                      <Text style={S.chipEmoji}>{cat.icon || '🛍️'}</Text>
+                      <Ionicons
+                        name={resolveCategoryIonIcon(cat.icon, cat.slug)}
+                        size={14}
+                        color={selectedCat === cat.id ? C.primary : C.textSub}
+                      />
                       <Text
                         style={[S.chipLabel, selectedCat === cat.id && S.chipLabelActive]}
                         numberOfLines={1}
@@ -988,14 +997,27 @@ const S = StyleSheet.create({
     paddingHorizontal: H_PAD, paddingBottom: H_PAD, gap: 8,
   },
   catCard: {
-    alignItems: 'center', gap: 4,
+    alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 10,
     borderRadius: 12, borderWidth: 1.5,
     borderColor: C.border, backgroundColor: C.inputBg,
     minWidth: 72,
   },
   catCardActive: { borderColor: C.primary, backgroundColor: C.primaryLight },
-  catEmoji:      { fontSize: 24 },
+  catIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: C.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  catIconWrapActive: {
+    backgroundColor: '#FFF',
+    borderColor: '#93C5FD',
+  },
   catName:       { fontSize: 10, fontWeight: '600', color: C.textSub, textAlign: 'center' },
   catNameActive: { color: C.primary },
   catCount:      { fontSize: 10, color: C.textMuted },
@@ -1013,7 +1035,6 @@ const S = StyleSheet.create({
     borderWidth: 1, borderColor: C.border,
   },
   chipActive:     { backgroundColor: C.primaryLight, borderColor: C.primary },
-  chipEmoji:      { fontSize: 13 },
   chipLabel:      { fontSize: 12, fontWeight: '500', color: C.textSub },
   chipLabelActive:{ color: C.primary, fontWeight: '700' },
 

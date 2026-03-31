@@ -20,6 +20,7 @@ import { ProductCard } from '@components/product/ProductCard';
 import { Colors } from '@constants/theme';
 import type { Category, Product } from '@typings/product';
 import type { GetProductsParams } from '@services/productService';
+import { resolveCategoryIonIcon } from '@utils/categoryIonIcon';
 
 // ─── Layout ───────────────────────────────────────────
 
@@ -268,7 +269,13 @@ function FilterSheet({
                         <Ionicons name={'checkmark' as IonName} size={13} color="#FFF" />
                       )}
                     </View>
-                    <Text style={FS.checkEmoji}>{cat.icon || '🛍️'}</Text>
+                    <View style={FS.checkIconWrap}>
+                      <Ionicons
+                        name={resolveCategoryIonIcon(cat.icon, cat.slug)}
+                        size={18}
+                        color={active ? C.primary : C.textSub}
+                      />
+                    </View>
                     <Text
                       style={[FS.checkLabel, active && FS.checkLabelActive]}
                       numberOfLines={1}
@@ -762,7 +769,16 @@ const FS = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   checkboxActive:   { backgroundColor: C.primary, borderColor: C.primary },
-  checkEmoji:       { fontSize: 18 },
+  checkIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: C.inputBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
   checkLabel:       { flex: 1, fontSize: 14, color: C.text, fontWeight: '500' },
   checkLabelActive: { color: C.primary, fontWeight: '700' },
   checkCount:       { fontSize: 12, color: C.textMuted },
