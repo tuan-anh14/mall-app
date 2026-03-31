@@ -4,20 +4,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity } from 'react-native';
+import { Colors } from '@constants/theme';
 import { TabParamList } from './types';
 import { HomeScreen } from '@screens/HomeScreen';
 import { SearchScreen } from '@screens/SearchScreen';
 import { CartScreen } from '@screens/CartScreen';
 import { WishlistScreen } from '@screens/WishlistScreen';
 import { ProfileNavigator } from './ProfileNavigator';
-
-// ── mall-fe colors ─────────────────────────────────────
-const PRIMARY       = '#1A56DB';
-const PRIMARY_LIGHT = '#EFF6FF';
-const SURFACE       = '#FFFFFF';
-const MUTED         = '#9CA3AF';
-const BORDER        = '#E5E7EB';
-const DANGER        = '#EF4444';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -66,7 +59,7 @@ function TabButton(props: BottomTabBarButtonProps & { cfg: TabCfg; focused: bool
         <Ionicons
           name={focused ? cfg.iconActive : cfg.icon}
           size={21}
-          color={focused ? PRIMARY : MUTED}
+          color={focused ? Colors.primary : Colors.textMuted}
         />
         {/* Badge */}
         {cfg.badge != null && cfg.badge > 0 && (
@@ -121,21 +114,19 @@ const BAR_H = Platform.OS === 'ios' ? 80 : 62;
 const S = StyleSheet.create({
   // The tab bar container
   bar: {
-    backgroundColor: SURFACE,
+    backgroundColor: Colors.surface,
     height: BAR_H,
     paddingBottom: Platform.OS === 'ios' ? 18 : 0,
     paddingTop: 0,
     borderTopWidth: 1,
-    borderTopColor: BORDER,
-    // Strong upward shadow
-    shadowColor: '#1A56DB',
+    borderTopColor: Colors.border,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.10,
     shadowRadius: 16,
     elevation: 20,
   },
 
-  // Each tab touchable — takes equal width
   tabBtn: {
     flex: 1,
     alignItems: 'center',
@@ -144,7 +135,6 @@ const S = StyleSheet.create({
     gap: 3,
   },
 
-  // Accent line at very top of each tab (shows only when active)
   tabIndicator: {
     width: '50%',
     height: 2.5,
@@ -153,10 +143,9 @@ const S = StyleSheet.create({
     marginBottom: 6,
   },
   tabIndicatorActive: {
-    backgroundColor: PRIMARY,
+    backgroundColor: Colors.primary,
   },
 
-  // Icon wrap — pill bg when active
   iconWrap: {
     width: 38,
     height: 32,
@@ -166,22 +155,20 @@ const S = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   iconWrapActive: {
-    backgroundColor: PRIMARY_LIGHT,
+    backgroundColor: Colors.primaryLight,
   },
 
-  // Label
   tabLabel: {
     fontSize: 10,
     fontWeight: '500',
-    color: MUTED,
+    color: Colors.textMuted,
     letterSpacing: 0.1,
   },
   tabLabelActive: {
-    color: PRIMARY,
+    color: Colors.primary,
     fontWeight: '700',
   },
 
-  // Cart badge
   badge: {
     position: 'absolute',
     top: -3,
@@ -189,12 +176,12 @@ const S = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: DANGER,
+    backgroundColor: Colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
     borderWidth: 1.5,
-    borderColor: SURFACE,
+    borderColor: Colors.surface,
   },
   badgeText: {
     fontSize: 9,

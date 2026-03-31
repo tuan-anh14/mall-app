@@ -10,8 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useProfile } from '@hooks/useProfile';
+import { useProfileMutations } from '@hooks/useProfile';
 import { Button } from '@components/ui/Button';
+import { ScreenHeader } from '@components/ui/ScreenHeader';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
@@ -26,7 +27,7 @@ const BENEFITS = [
 
 export function BecomeSellerScreen() {
   const navigation = useNavigation<Nav>();
-  const { becomeSeller } = useProfile();
+  const { becomeSeller } = useProfileMutations();
 
   const [message, setMessage] = useState('');
 
@@ -64,18 +65,7 @@ export function BecomeSellerScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.headerBack}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Trở thành người bán</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <ScreenHeader title="Trở thành người bán" onBack={() => navigation.goBack()} />
 
         {/* Hero */}
         <View style={styles.hero}>
@@ -158,34 +148,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    marginBottom: 24,
-  },
-  headerBack: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  backIcon: { fontSize: 20, color: '#1F2937' },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-  },
-  headerSpacer: { width: 40 },
   hero: {
     alignItems: 'center',
     marginBottom: 24,

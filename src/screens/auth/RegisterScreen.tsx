@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
+import { ScreenHeader } from '@components/ui/ScreenHeader';
 import { getApiErrorMessage } from '@utils/index';
 import type { AuthStackParamList } from '@app/navigation/types';
 
@@ -56,16 +57,7 @@ export function RegisterScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.backIcon}>←</Text>
-            </TouchableOpacity>
-          </View>
+          <ScreenHeader onBack={() => navigation.goBack()} />
 
           {/* Brand */}
           <View style={styles.brand}>
@@ -167,24 +159,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
-  header: {
-    paddingTop: 12,
-    marginBottom: 24,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  backIcon: { fontSize: 20, color: '#1F2937' },
   brand: {
     alignItems: 'center',
     marginBottom: 28,

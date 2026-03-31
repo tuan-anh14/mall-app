@@ -20,25 +20,32 @@ export interface RegisterDto {
   password: string;
 }
 
-async function persistCookie(headers: Record<string, unknown>) {
-  const cookie = extractSessionCookie(
+async function persistCookie(
+  headers: Record<string, unknown>,
+  sessionId?: string,
+): Promise<void> {
+  // Prefer Set-Cookie header; fall back to sessionId from response body
+  // because React Native / axios cannot read Set-Cookie headers.
+  const cookieFromHeader = extractSessionCookie(
     headers['set-cookie'] as string | string[] | undefined,
   );
-  if (cookie) {
-    await secureStorage.setSessionCookie(cookie);
+  if (cookieFromHeader) {
+    await secureStorage.setSessionCookie(cookieFromHeader);
+  } else if (sessionId) {
+    await secureStorage.setSessionCookie(`session=${sessionId}`);
   }
 }
 
 export const authService = {
   login: async (data: LoginDto): Promise<AuthUser> => {
-    const res = await api.post<{ user: AuthUser }>('/api/v1/auth/login', data);
-    await persistCookie(res.headers as Record<string, unknown>);
+    const res = await api.post<{ user: AuthUser; sessionId: string }>('/api/v1/auth/login', data);
+    await persistCookie(res.headers as Record<string, unknown>, res.data.sessionId);
     return res.data.user;
   },
 
   register: async (data: RegisterDto): Promise<AuthUser> => {
-    const res = await api.post<{ user: AuthUser }>('/api/v1/auth/register', data);
-    await persistCookie(res.headers as Record<string, unknown>);
+    const res = await api.post<{ user: AuthUser; sessionId: string }>('/api/v1/auth/register', data);
+    await persistCookie(res.headers as Record<string, unknown>, res.data.sessionId);
     return res.data.user;
   },
 
@@ -59,6 +66,14 @@ export const authService = {
     const res = await api.post<{ message: string }>(
       '/api/v1/auth/forgot-password',
       { email },
+    );
+    return res.data.message;
+  },
+
+  resetPassword: async (token: string, password: string): Promise<string> => {
+    const res = await api.post<{ message: string }>(
+      '/api/v1/auth/reset-password',
+      { token, password },
     );
     return res.data.message;
   },

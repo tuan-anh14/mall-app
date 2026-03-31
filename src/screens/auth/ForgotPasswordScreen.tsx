@@ -12,6 +12,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
+import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { getApiErrorMessage } from '@utils/index';
 import type { AuthStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
@@ -49,14 +51,21 @@ export function ForgotPasswordScreen() {
           </View>
           <Text style={styles.successTitle}>Kiểm tra email của bạn</Text>
           <Text style={styles.successText}>
-            Chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến{'\n'}
+            Chúng tôi đã gửi mã xác nhận đến{'\n'}
             <Text style={styles.emailHighlight}>{email}</Text>
+            {'\n'}Kiểm tra hộp thư và dán mã vào màn hình tiếp theo.
           </Text>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('ResetPassword', {})}
             style={styles.backToLoginBtn}
           >
-            <Text style={styles.backToLoginText}>← Quay lại đăng nhập</Text>
+            <Text style={styles.backToLoginText}>Nhập mã đặt lại mật khẩu →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            style={styles.secondaryBtn}
+          >
+            <Text style={styles.secondaryBtnText}>← Quay lại đăng nhập</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -71,16 +80,7 @@ export function ForgotPasswordScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.backIcon}>←</Text>
-            </TouchableOpacity>
-          </View>
+          <ScreenHeader onBack={() => navigation.goBack()} />
 
           {/* Icon */}
           <View style={styles.iconContainer}>
@@ -114,7 +114,10 @@ export function ForgotPasswordScreen() {
             {forgotPassword.isError && (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorBannerText}>
-                  Không tìm thấy tài khoản với email này.
+                  {getApiErrorMessage(
+                    forgotPassword.error,
+                    'Có lỗi xảy ra. Vui lòng thử lại.',
+                  )}
                 </Text>
               </View>
             )}
@@ -145,24 +148,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
-  header: {
-    paddingTop: 12,
-    marginBottom: 32,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  backIcon: { fontSize: 20, color: '#1F2937' },
   iconContainer: { alignItems: 'center', marginBottom: 32 },
   iconCircle: {
     width: 80,
@@ -257,10 +242,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     backgroundColor: '#1A56DB',
     borderRadius: 12,
+    marginBottom: 12,
   },
   backToLoginText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  secondaryBtn: {
+    paddingVertical: 12,
+  },
+  secondaryBtnText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });

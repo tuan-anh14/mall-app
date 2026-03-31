@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@hooks/useAuth';
+import { useProfileQuery, useProfileMutations } from '@hooks/useProfile';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
@@ -19,6 +21,9 @@ const ROLE_LABEL: Record<string, string> = {
   buyer: 'Người mua',
   seller: 'Người bán',
   admin: 'Quản trị viên',
+  BUYER: 'Người mua',
+  SELLER: 'Người bán',
+  ADMIN: 'Quản trị viên',
 };
 
 const SELLER_STATUS_LABEL: Record<string, string> = {
@@ -27,11 +32,26 @@ const SELLER_STATUS_LABEL: Record<string, string> = {
   REJECTED: 'Bị từ chối',
 };
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function formatMemberSince(dateStr?: string | null): string {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+}
+
+function InfoRow({ label, value, verified }: { label: string; value: string; verified?: boolean }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+      <View style={styles.infoValueRow}>
+        <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+        {verified !== undefined && (
+          <View style={[styles.verifiedBadge, !verified && styles.unverifiedBadge]}>
+            <Text style={[styles.verifiedText, !verified && styles.unverifiedText]}>
+              {verified ? 'Đã xác thực' : 'Chưa xác thực'}
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -39,11 +59,13 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function MenuItem({
   icon,
   label,
+  sublabel,
   onPress,
   danger,
 }: {
   icon: string;
   label: string;
+  sublabel?: string;
   onPress: () => void;
   danger?: boolean;
 }) {
@@ -52,7 +74,10 @@ function MenuItem({
       <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
         <Text style={styles.menuIconText}>{icon}</Text>
       </View>
-      <Text style={[styles.menuLabel, danger && styles.menuLabelDanger]}>{label}</Text>
+      <View style={styles.menuContent}>
+        <Text style={[styles.menuLabel, danger && styles.menuLabelDanger]}>{label}</Text>
+        {sublabel && <Text style={styles.menuSublabel}>{sublabel}</Text>}
+      </View>
       <Text style={styles.menuChevron}>›</Text>
     </TouchableOpacity>
   );
@@ -61,6 +86,8 @@ function MenuItem({
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, logout } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfileQuery();
+  const { deleteAccount } = useProfileMutations();
 
   const avatarLetter = user?.name?.[0]?.toUpperCase() ?? '?';
   const isBuyer = user?.userType === 'buyer';
@@ -75,6 +102,21 @@ export function ProfileScreen() {
         onPress: () => logout.mutate(),
       },
     ]);
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Xóa tài khoản',
+      'Hành động này không thể hoàn tác. Toàn bộ dữ liệu của bạn sẽ bị xóa vĩnh viễn.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa tài khoản',
+          style: 'destructive',
+          onPress: () => deleteAccount.mutate(),
+        },
+      ],
+    );
   }
 
   return (
@@ -96,32 +138,62 @@ export function ProfileScreen() {
               {ROLE_LABEL[user?.userType ?? ''] ?? user?.userType}
             </Text>
           </View>
+          {profile?.memberSince && (
+            <Text style={styles.memberSince}>
+              Thành viên từ {formatMemberSince(profile.memberSince)}
+            </Text>
+          )}
         </View>
 
         {/* Info Card */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Thông tin tài khoản</Text>
-          <InfoRow label="Email" value={user?.email ?? '—'} />
-          <View style={styles.divider} />
-          <InfoRow label="Vai trò" value={ROLE_LABEL[user?.userType ?? ''] ?? '—'} />
-          {user?.sellerRequestStatus && (
+          {profileLoading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#1A56DB" />
+            </View>
+          ) : (
             <>
+              <InfoRow
+                label="Email"
+                value={user?.email ?? '—'}
+                verified={profile?.isEmailVerified}
+              />
+              {profile?.phone && (
+                <>
+                  <View style={styles.divider} />
+                  <InfoRow label="Số điện thoại" value={profile.phone} />
+                </>
+              )}
               <View style={styles.divider} />
               <InfoRow
-                label="Yêu cầu bán hàng"
-                value={SELLER_STATUS_LABEL[user.sellerRequestStatus] ?? user.sellerRequestStatus}
+                label="Vai trò"
+                value={ROLE_LABEL[user?.userType ?? ''] ?? '—'}
               />
+              {user?.sellerRequestStatus && (
+                <>
+                  <View style={styles.divider} />
+                  <InfoRow
+                    label="Yêu cầu bán hàng"
+                    value={
+                      SELLER_STATUS_LABEL[user.sellerRequestStatus] ??
+                      user.sellerRequestStatus
+                    }
+                  />
+                </>
+              )}
             </>
           )}
         </View>
 
-        {/* Actions Card */}
+        {/* Account Actions */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Cài đặt</Text>
+          <Text style={styles.sectionTitle}>Tài khoản</Text>
 
           <MenuItem
             icon="✏️"
             label="Chỉnh sửa hồ sơ"
+            sublabel="Tên, số điện thoại"
             onPress={() => navigation.navigate('EditProfile')}
           />
           <View style={styles.divider} />
@@ -130,6 +202,22 @@ export function ProfileScreen() {
             icon="🔒"
             label="Đổi mật khẩu"
             onPress={() => navigation.navigate('ChangePassword')}
+          />
+          <View style={styles.divider} />
+
+          <MenuItem
+            icon="📦"
+            label="Địa chỉ giao hàng"
+            sublabel="Quản lý địa chỉ nhận hàng"
+            onPress={() => navigation.navigate('Addresses')}
+          />
+          <View style={styles.divider} />
+
+          <MenuItem
+            icon="⚙️"
+            label="Cài đặt"
+            sublabel="Thông báo, ngôn ngữ, tiền tệ"
+            onPress={() => navigation.navigate('Settings')}
           />
 
           {isBuyer && !hasPendingRequest && (
@@ -154,7 +242,7 @@ export function ProfileScreen() {
           )}
         </View>
 
-        {/* Logout */}
+        {/* Logout + Delete */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.logoutBtn}
@@ -164,6 +252,17 @@ export function ProfileScreen() {
           >
             <Text style={styles.logoutText}>
               {logout.isPending ? 'Đang đăng xuất...' : '🚪  Đăng xuất'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteAccountBtn}
+            onPress={handleDeleteAccount}
+            disabled={deleteAccount.isPending}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.deleteAccountText}>
+              {deleteAccount.isPending ? 'Đang xóa...' : 'Xóa tài khoản'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -187,7 +286,8 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
   },
   avatar: {
     width: 88,
@@ -221,11 +321,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#BFDBFE',
+    marginBottom: 8,
   },
   roleText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#1A56DB',
+  },
+  memberSince: {
+    fontSize: 12,
+    color: '#9CA3AF',
   },
   card: {
     marginHorizontal: 20,
@@ -247,6 +352,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 16,
   },
+  loadingRow: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -257,12 +366,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
   },
+  infoValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: '65%',
+  },
   infoValue: {
     fontSize: 14,
     fontWeight: '500',
     color: '#1F2937',
-    maxWidth: '60%',
     textAlign: 'right',
+    flexShrink: 1,
+  },
+  verifiedBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#6EE7B7',
+  },
+  unverifiedBadge: {
+    backgroundColor: '#FEF9C3',
+    borderColor: '#FDE047',
+  },
+  verifiedText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  unverifiedText: {
+    color: '#CA8A04',
   },
   divider: {
     height: 1,
@@ -286,17 +421,18 @@ const styles = StyleSheet.create({
   menuIconDanger: {
     backgroundColor: '#FEF2F2',
   },
-  menuIconText: {
-    fontSize: 18,
-  },
+  menuIconText: { fontSize: 18 },
+  menuContent: { flex: 1 },
   menuLabel: {
-    flex: 1,
     fontSize: 15,
     color: '#1F2937',
     fontWeight: '500',
   },
-  menuLabelDanger: {
-    color: '#EF4444',
+  menuLabelDanger: { color: '#EF4444' },
+  menuSublabel: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 1,
   },
   menuChevron: {
     fontSize: 20,
@@ -319,6 +455,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
+    gap: 10,
   },
   logoutBtn: {
     backgroundColor: '#FEF2F2',
@@ -332,5 +469,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#EF4444',
+  },
+  deleteAccountBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  deleteAccountText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textDecorationLine: 'underline',
   },
 });

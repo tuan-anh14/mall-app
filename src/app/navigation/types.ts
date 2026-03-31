@@ -4,6 +4,7 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  ResetPassword: { token?: string };
 };
 
 export type ProfileStackParamList = {
@@ -11,6 +12,9 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   ChangePassword: undefined;
   BecomeSeller: undefined;
+  Addresses: undefined;
+  AddressForm: { addressId?: string };
+  Settings: undefined;
 };
 
 export type TabParamList = {

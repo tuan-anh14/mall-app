@@ -19,6 +19,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@hooks/useAuth';
 import { useCategories, usePromotions, useProducts } from '@hooks/useHome';
 import { ProductCard, TrendingCard } from '@components/product/ProductCard';
+import { Colors } from '@constants/theme';
+import { QUERY_KEYS } from '@constants/queryKeys';
 import type { Product, Category, Promotion } from '@types/product';
 
 const { width: W } = Dimensions.get('window');
@@ -27,22 +29,8 @@ const GAP     = 12;
 const CARD_W  = (W - H_PAD * 2 - GAP) / 2;
 const PROMO_W = W - H_PAD * 2;
 
-// ─── Design tokens — mall-fe globals.css ──────────────
-const C = {
-  primary:       '#1A56DB',
-  primaryDark:   '#1E3A8A',
-  primaryLight:  '#EFF6FF',
-  bg:            '#F3F4F6',   // --muted
-  surface:       '#FFFFFF',
-  inputBg:       '#F9FAFB',   // --input-background
-  border:        '#E5E7EB',   // --border
-  text:          '#1F2937',   // --foreground
-  textSub:       '#6B7280',   // --muted-foreground
-  textMuted:     '#9CA3AF',
-  danger:        '#EF4444',   // --destructive
-  star:          '#F59E0B',   // --chart-1
-  ring:          '#3B82F6',   // --ring
-};
+// Alias for brevity within this file
+const C = Colors;
 
 const PROMO_THEMES = [
   { bg: '#1A56DB', blob: 'rgba(255,255,255,0.10)' },
@@ -348,9 +336,9 @@ export function HomeScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['products'] }),
-      queryClient.invalidateQueries({ queryKey: ['categories'] }),
-      queryClient.invalidateQueries({ queryKey: ['promotions'] }),
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.products }),
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categories }),
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.promotions }),
     ]);
     setRefreshing(false);
   }, [queryClient]);

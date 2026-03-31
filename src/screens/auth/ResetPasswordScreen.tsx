@@ -7,65 +7,67 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useProfileMutations } from '@hooks/useProfile';
+import type { RouteProp } from '@react-navigation/native';
+import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import { getApiErrorMessage } from '@utils/index';
-import type { ProfileStackParamList } from '@app/navigation/types';
+import type { AuthStackParamList } from '@app/navigation/types';
 
-type Nav = NativeStackNavigationProp<ProfileStackParamList, 'ChangePassword'>;
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'ResetPassword'>;
+type Route = RouteProp<AuthStackParamList, 'ResetPassword'>;
 
-export function ChangePasswordScreen() {
+export function ResetPasswordScreen() {
   const navigation = useNavigation<Nav>();
-  const { changePassword } = useProfileMutations();
+  const route = useRoute<Route>();
+  const { resetPassword } = useAuth();
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [token, setToken] = useState(route.params?.token ?? '');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<{
-    currentPassword?: string;
-    newPassword?: string;
+    token?: string;
+    password?: string;
     confirmPassword?: string;
   }>({});
 
   function validate(): boolean {
     const next: typeof errors = {};
-    if (!currentPassword) next.currentPassword = 'Mật khẩu hiện tại không được để trống';
-    if (!newPassword) next.newPassword = 'Mật khẩu mới không được để trống';
-    else if (newPassword.length < 6) next.newPassword = 'Mật khẩu tối thiểu 6 ký tự';
+    if (!token.trim()) next.token = 'Mã xác nhận không được để trống';
+    if (!password) next.password = 'Mật khẩu mới không được để trống';
+    else if (password.length < 6) next.password = 'Mật khẩu tối thiểu 6 ký tự';
     if (!confirmPassword) next.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
-    else if (confirmPassword !== newPassword) next.confirmPassword = 'Mật khẩu xác nhận không khớp';
+    else if (confirmPassword !== password) next.confirmPassword = 'Mật khẩu xác nhận không khớp';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
   function handleSubmit() {
     if (!validate()) return;
-    changePassword.mutate({ currentPassword, newPassword });
+    resetPassword.mutate({ token: token.trim(), password });
   }
 
-  if (changePassword.isSuccess) {
+  if (resetPassword.isSuccess) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
             <Text style={styles.successEmoji}>✅</Text>
           </View>
-          <Text style={styles.successTitle}>Đổi mật khẩu thành công!</Text>
+          <Text style={styles.successTitle}>Đặt lại mật khẩu thành công!</Text>
           <Text style={styles.successText}>
-            Mật khẩu của bạn đã được cập nhật. Vui lòng sử dụng mật khẩu mới khi đăng nhập.
+            Mật khẩu của bạn đã được cập nhật. Vui lòng đăng nhập bằng mật khẩu mới.
           </Text>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
+            onPress={() => navigation.navigate('Login')}
+            style={styles.loginBtn}
           >
-            <Text style={styles.backBtnText}>← Quay lại hồ sơ</Text>
+            <Text style={styles.loginBtnText}>Đăng nhập ngay</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -80,53 +82,52 @@ export function ChangePasswordScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-        <ScreenHeader title="Đổi mật khẩu" onBack={() => navigation.goBack()} />
+        <ScreenHeader onBack={() => navigation.goBack()} />
 
         {/* Icon */}
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconEmoji}>🔒</Text>
+            <Text style={styles.iconEmoji}>🔓</Text>
           </View>
         </View>
 
         {/* Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Tạo mật khẩu mới</Text>
-          <Text style={styles.cardSubtitle}>
-            Mật khẩu mới phải khác mật khẩu hiện tại và có ít nhất 6 ký tự.
+          <Text style={styles.title}>Đặt lại mật khẩu</Text>
+          <Text style={styles.subtitle}>
+            Nhập mã xác nhận từ email và mật khẩu mới của bạn.
           </Text>
 
           <View style={styles.form}>
             <Input
-              label="Mật khẩu hiện tại"
-              placeholder="Nhập mật khẩu hiện tại"
-              value={currentPassword}
+              label="Mã xác nhận"
+              placeholder="Dán mã từ email vào đây"
+              value={token}
               onChangeText={(v) => {
-                setCurrentPassword(v);
-                if (errors.currentPassword)
-                  setErrors((e) => ({ ...e, currentPassword: undefined }));
+                setToken(v);
+                if (errors.token) setErrors((e) => ({ ...e, token: undefined }));
               }}
-              secureTextEntry={!showCurrent}
-              error={errors.currentPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              error={errors.token}
               leftIcon={<Text style={styles.inputIcon}>🔑</Text>}
-              rightIcon={<Text style={styles.inputIcon}>{showCurrent ? '🙈' : '👁'}</Text>}
-              onRightIconPress={() => setShowCurrent((v) => !v)}
             />
 
             <Input
               label="Mật khẩu mới"
               placeholder="Tối thiểu 6 ký tự"
-              value={newPassword}
+              value={password}
               onChangeText={(v) => {
-                setNewPassword(v);
-                if (errors.newPassword)
-                  setErrors((e) => ({ ...e, newPassword: undefined }));
+                setPassword(v);
+                if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
               }}
-              secureTextEntry={!showNew}
-              error={errors.newPassword}
+              secureTextEntry={!showPassword}
+              error={errors.password}
               leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-              rightIcon={<Text style={styles.inputIcon}>{showNew ? '🙈' : '👁'}</Text>}
-              onRightIconPress={() => setShowNew((v) => !v)}
+              rightIcon={
+                <Text style={styles.inputIcon}>{showPassword ? '🙈' : '👁'}</Text>
+              }
+              onRightIconPress={() => setShowPassword((v) => !v)}
             />
 
             <Input
@@ -141,34 +142,36 @@ export function ChangePasswordScreen() {
               secureTextEntry={!showConfirm}
               error={errors.confirmPassword}
               leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-              rightIcon={<Text style={styles.inputIcon}>{showConfirm ? '🙈' : '👁'}</Text>}
+              rightIcon={
+                <Text style={styles.inputIcon}>{showConfirm ? '🙈' : '👁'}</Text>
+              }
               onRightIconPress={() => setShowConfirm((v) => !v)}
             />
           </View>
 
-          {changePassword.isError && (
+          {resetPassword.isError && (
             <View style={styles.errorBanner}>
               <Text style={styles.errorBannerText}>
                 {getApiErrorMessage(
-                  changePassword.error,
-                  'Đổi mật khẩu thất bại. Kiểm tra lại mật khẩu hiện tại.',
+                  resetPassword.error,
+                  'Mã xác nhận không hợp lệ hoặc đã hết hạn.',
                 )}
               </Text>
             </View>
           )}
 
           <Button
-            label="Đổi mật khẩu"
+            label="Đặt lại mật khẩu"
             onPress={handleSubmit}
-            loading={changePassword.isPending}
+            loading={resetPassword.isPending}
             style={styles.ctaBtn}
           />
 
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('Login')}
             style={styles.cancelRow}
           >
-            <Text style={styles.cancelText}>← Quay lại</Text>
+            <Text style={styles.cancelText}>← Quay lại đăng nhập</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -205,13 +208,13 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 4,
   },
-  cardTitle: {
-    fontSize: 20,
+  title: {
+    fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  cardSubtitle: {
+  subtitle: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 24,
@@ -233,7 +236,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   ctaBtn: { marginTop: 20 },
-  cancelRow: { alignItems: 'center', marginTop: 16 },
+  cancelRow: { alignItems: 'center', marginTop: 20 },
   cancelText: { fontSize: 14, color: '#6B7280' },
   // Success state
   successContainer: {
@@ -268,13 +271,13 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 32,
   },
-  backBtn: {
+  loginBtn: {
     paddingVertical: 14,
     paddingHorizontal: 28,
     backgroundColor: '#1A56DB',
     borderRadius: 12,
   },
-  backBtnText: {
+  loginBtnText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',

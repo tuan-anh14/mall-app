@@ -3,8 +3,10 @@ import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
+  StyleSheet,
   TouchableOpacityProps,
 } from 'react-native';
+import { Colors } from '@constants/theme';
 
 interface ButtonProps extends TouchableOpacityProps {
   label: string;
@@ -17,36 +19,57 @@ export function Button({
   loading = false,
   variant = 'primary',
   disabled,
+  style,
   ...rest
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const isPrimary = variant === 'primary';
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       disabled={isDisabled}
-      className={[
-        'h-12 rounded-xl items-center justify-center px-6',
-        variant === 'primary'
-          ? 'bg-primary-600'
-          : 'border border-primary-600 bg-transparent',
-        isDisabled ? 'opacity-50' : '',
-      ].join(' ')}
+      style={[styles.base, isPrimary ? styles.primary : styles.outline, isDisabled && styles.disabled, style]}
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? '#ffffff' : '#2563eb'}
-        />
+        <ActivityIndicator color={isPrimary ? '#FFF' : Colors.primary} />
       ) : (
-        <Text
-          className={`text-base font-semibold ${
-            variant === 'primary' ? 'text-white' : 'text-primary-600'
-          }`}
-        >
+        <Text style={[styles.label, isPrimary ? styles.labelPrimary : styles.labelOutline]}>
           {label}
         </Text>
       )}
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  base: {
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  primary: {
+    backgroundColor: Colors.primary,
+  },
+  outline: {
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: 'transparent',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  labelPrimary: {
+    color: '#FFF',
+  },
+  labelOutline: {
+    color: Colors.primary,
+  },
+});

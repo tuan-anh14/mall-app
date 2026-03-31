@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,41 +6,43 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '@hooks/useAuth';
-import { useProfile } from '@hooks/useProfile';
+import { useProfileQuery, useProfileMutations } from '@hooks/useProfile';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
+import { ScreenHeader } from '@components/ui/ScreenHeader';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'EditProfile'>;
 
-function splitName(fullName: string): { firstName: string; lastName: string } {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(' '),
-  };
-}
-
 export function EditProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const { user } = useAuth();
-  const { updateProfile } = useProfile();
+  const { data: profile, isLoading: profileLoading } = useProfileQuery();
+  const { updateProfile } = useProfileMutations();
 
-  const initial = splitName(user?.name ?? '');
-  const [firstName, setFirstName] = useState(initial.firstName);
-  const [lastName, setLastName] = useState(initial.lastName);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [hydrated, setHydrated] = useState(false);
   const [errors, setErrors] = useState<{
     firstName?: string;
     lastName?: string;
   }>({});
+
+  // Pre-fill once profile loads
+  useEffect(() => {
+    if (profile && !hydrated) {
+      setFirstName(profile.firstName);
+      setLastName(profile.lastName);
+      setPhone(profile.phone ?? '');
+      setHydrated(true);
+    }
+  }, [profile, hydrated]);
 
   function validate(): boolean {
     const next: typeof errors = {};
@@ -75,67 +77,67 @@ export function EditProfileScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chỉnh sửa hồ sơ</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <ScreenHeader title="Chỉnh sửa hồ sơ" onBack={() => navigation.goBack()} />
 
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarLetter}>
-              {(firstName[0] ?? user?.name?.[0] ?? '?').toUpperCase()}
+              {(firstName[0] ?? profile?.firstName?.[0] ?? '?').toUpperCase()}
             </Text>
           </View>
         </View>
 
         {/* Form Card */}
         <View style={styles.card}>
-          <View style={styles.form}>
-            <Input
-              label="Tên"
-              placeholder="Nguyễn"
-              value={firstName}
-              onChangeText={(v) => {
-                setFirstName(v);
-                if (errors.firstName) setErrors((e) => ({ ...e, firstName: undefined }));
-              }}
-              autoCapitalize="words"
-              error={errors.firstName}
-              leftIcon={<Text style={styles.inputIcon}>👤</Text>}
-            />
+          {profileLoading && !hydrated ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#1A56DB" />
+              <Text style={styles.loadingText}>Đang tải thông tin...</Text>
+            </View>
+          ) : (
+            <View style={styles.form}>
+              <Input
+                label="Tên"
+                placeholder="Nguyễn"
+                value={firstName}
+                onChangeText={(v) => {
+                  setFirstName(v);
+                  if (errors.firstName)
+                    setErrors((e) => ({ ...e, firstName: undefined }));
+                }}
+                autoCapitalize="words"
+                error={errors.firstName}
+                leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+              />
 
-            <Input
-              label="Họ (và tên đệm)"
-              placeholder="Văn A"
-              value={lastName}
-              onChangeText={setLastName}
-              autoCapitalize="words"
-              leftIcon={<Text style={styles.inputIcon}>👤</Text>}
-            />
+              <Input
+                label="Họ (và tên đệm)"
+                placeholder="Văn A"
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+                leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+              />
 
-            <Input
-              label="Số điện thoại (tuỳ chọn)"
-              placeholder="0901 234 567"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              leftIcon={<Text style={styles.inputIcon}>📞</Text>}
-            />
-          </View>
+              <Input
+                label="Số điện thoại (tùy chọn)"
+                placeholder="0901 234 567"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                leftIcon={<Text style={styles.inputIcon}>📞</Text>}
+              />
+            </View>
+          )}
 
           {updateProfile.isError && (
             <View style={styles.errorBanner}>
               <Text style={styles.errorBannerText}>
-                {getApiErrorMessage(updateProfile.error, 'Cập nhật thất bại. Vui lòng thử lại.')}
+                {getApiErrorMessage(
+                  updateProfile.error,
+                  'Cập nhật thất bại. Vui lòng thử lại.',
+                )}
               </Text>
             </View>
           )}
@@ -144,6 +146,7 @@ export function EditProfileScreen() {
             label="Lưu thay đổi"
             onPress={handleSave}
             loading={updateProfile.isPending}
+            disabled={profileLoading && !hydrated}
             style={styles.ctaBtn}
           />
 
@@ -166,34 +169,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    marginBottom: 28,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  backIcon: { fontSize: 20, color: '#1F2937' },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-  },
-  headerSpacer: { width: 40 },
   avatarSection: {
     alignItems: 'center',
     marginBottom: 28,
@@ -221,6 +196,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 20,
     elevation: 4,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
   form: { gap: 16 },
   inputIcon: { fontSize: 16 },
