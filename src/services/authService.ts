@@ -20,19 +20,30 @@ export interface RegisterDto {
   password: string;
 }
 
+export interface VerifyEmailDto {
+  email: string;
+  code: string;
+}
+
 async function persistCookie(
   headers: Record<string, unknown>,
   sessionId?: string,
 ): Promise<void> {
-  // Prefer Set-Cookie header; fall back to sessionId from response body
-  // because React Native / axios cannot read Set-Cookie headers.
+  console.log('[AUTH] persistCookie called, sessionId:', sessionId);
+  console.log('[AUTH] set-cookie header:', headers['set-cookie']);
   const cookieFromHeader = extractSessionCookie(
     headers['set-cookie'] as string | string[] | undefined,
   );
+  console.log('[AUTH] cookieFromHeader:', cookieFromHeader);
   if (cookieFromHeader) {
     await secureStorage.setSessionCookie(cookieFromHeader);
+    console.log('[AUTH] cookie stored from header:', cookieFromHeader);
   } else if (sessionId) {
-    await secureStorage.setSessionCookie(`session=${sessionId}`);
+    const value = `session=${sessionId}`;
+    await secureStorage.setSessionCookie(value);
+    console.log('[AUTH] cookie stored from sessionId:', value);
+  } else {
+    console.warn('[AUTH] persistCookie: nothing to store! sessionId and header both missing');
   }
 }
 
@@ -43,10 +54,15 @@ export const authService = {
     return res.data.user;
   },
 
+  // Register returns { user } with no session — user must verify email before login
   register: async (data: RegisterDto): Promise<AuthUser> => {
-    const res = await api.post<{ user: AuthUser; sessionId: string }>('/api/v1/auth/register', data);
-    await persistCookie(res.headers as Record<string, unknown>, res.data.sessionId);
+    const res = await api.post<{ user: AuthUser }>('/api/v1/auth/register', data);
     return res.data.user;
+  },
+
+  verifyEmail: async (data: VerifyEmailDto): Promise<string> => {
+    const res = await api.post<{ message: string }>('/api/v1/auth/verify-email', data);
+    return res.data.message;
   },
 
   me: async (): Promise<AuthUser> => {

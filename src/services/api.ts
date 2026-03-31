@@ -12,14 +12,27 @@ export const api = axios.create({
   },
 });
 
-// Attach session cookie to every request
-api.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
-    const cookie = await secureStorage.getSessionCookie();
-    if (cookie) {
-      config.headers.Cookie = cookie;
+// Native HTTP layer (iOS NSURLSession / Android OkHttp) automatically sends
+// cookies received via Set-Cookie. Do NOT set Cookie header manually — on iOS
+// it merges the manual header with the native cookie using a comma, producing
+// an invalid value like "session=id,session=id" that breaks session lookup.
+
+/**
+ * Unwrap the global TransformInterceptor envelope from the backend.
+ * All success responses are shaped as { success: true, data: <actual>, meta: {...} }.
+ * After this interceptor, response.data === the actual payload (e.g. { user: {...} }).
+ */
+api.interceptors.response.use(
+  (response) => {
+    if (
+      response.data !== null &&
+      typeof response.data === 'object' &&
+      response.data.success === true &&
+      'data' in response.data
+    ) {
+      response.data = response.data.data;
     }
-    return config;
+    return response;
   },
   (error: AxiosError) => Promise.reject(error),
 );
@@ -49,24 +62,25 @@ api.interceptors.response.use(
 
 async function checkSessionAndLogoutIfNeeded(): Promise<void> {
   const cookie = await secureStorage.getSessionCookie();
+  console.log('[AUTH CHECK] cookie in store:', cookie ?? 'NONE');
   if (!cookie) {
+    console.warn('[AUTH CHECK] no cookie → logging out immediately');
     authEvents.emitUnauthenticated();
     return;
   }
   try {
-    // Use a plain axios instance (no interceptors) to avoid recursive loops
     await axios.get(`${Config.API_BASE_URL}/api/v1/auth/me`, {
       headers: { Cookie: cookie, Accept: 'application/json' },
       timeout: 10_000,
     });
-    // /auth/me succeeded → session is valid, the 401 was from another endpoint
+    console.log('[AUTH CHECK] /auth/me OK → session valid, 401 from another endpoint');
   } catch (e) {
-    if ((e as AxiosError).response?.status === 401) {
-      // Session is truly expired
+    const status = (e as AxiosError).response?.status;
+    console.warn('[AUTH CHECK] /auth/me failed, status:', status);
+    if (status === 401) {
       await secureStorage.clearAll();
       authEvents.emitUnauthenticated();
     }
-    // Other errors (network, 5xx) → don't logout, may be transient
   }
 }
 

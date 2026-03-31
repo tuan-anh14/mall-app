@@ -1,10 +1,14 @@
 /**
- * Extract a human-readable message from an Axios error response
+ * Extract a human-readable message from an Axios error response.
+ * Backend error shape (HttpExceptionFilter): { success: false, error: { code, message }, meta }
  */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === 'object' && 'response' in error) {
-    const res = (error as { response?: { data?: { message?: string } } }).response;
-    if (res?.data?.message) return res.data.message;
+    const data = (
+      error as { response?: { data?: { error?: { message?: string }; message?: string } } }
+    ).response?.data;
+    if (data?.error?.message) return data.error.message;
+    if (data?.message) return data.message;
   }
   return fallback;
 }

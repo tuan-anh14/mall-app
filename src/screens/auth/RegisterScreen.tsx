@@ -46,7 +46,11 @@ export function RegisterScreen() {
 
   function handleRegister() {
     if (!validate()) return;
-    register.mutate({ name: name.trim(), email: email.trim(), password });
+    const trimmedEmail = email.trim();
+    register.mutate(
+      { name: name.trim(), email: trimmedEmail, password },
+      { onSuccess: () => navigation.navigate('VerifyEmail', { email: trimmedEmail }) },
+    );
   }
 
   return (

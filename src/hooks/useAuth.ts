@@ -1,6 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@store/authStore';
-import { authService, type LoginDto, type RegisterDto } from '@services/authService';
+import {
+  authService,
+  type LoginDto,
+  type RegisterDto,
+  type VerifyEmailDto,
+} from '@services/authService';
 
 export function useAuth() {
   const user = useAuthStore((s) => s.user);
@@ -14,9 +19,14 @@ export function useAuth() {
     onSuccess: (user) => setUser(user),
   });
 
+  // Register only creates the account — no session is created.
+  // After success, navigate to VerifyEmail screen.
   const registerMutation = useMutation({
     mutationFn: (data: RegisterDto) => authService.register(data),
-    onSuccess: (user) => setUser(user),
+  });
+
+  const verifyEmailMutation = useMutation({
+    mutationFn: (data: VerifyEmailDto) => authService.verifyEmail(data),
   });
 
   const forgotPasswordMutation = useMutation({
@@ -38,6 +48,7 @@ export function useAuth() {
     isHydrated,
     login: loginMutation,
     register: registerMutation,
+    verifyEmail: verifyEmailMutation,
     forgotPassword: forgotPasswordMutation,
     resetPassword: resetPasswordMutation,
     logout: logoutMutation,
