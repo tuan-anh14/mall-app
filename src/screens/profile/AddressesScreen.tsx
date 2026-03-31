@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAddressesQuery, useProfileMutations } from '@hooks/useProfile';
+import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import type { ShippingAddress } from '@typings/profile';
 import type { ProfileStackParamList } from '@app/navigation/types';
@@ -127,7 +128,7 @@ export function AddressesScreen() {
         ) : addresses.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
-              <Text style={styles.emptyEmoji}>📦</Text>
+              <Ionicons name="cube-outline" size={40} color="#9CA3AF" />
             </View>
             <Text style={styles.emptyTitle}>Chưa có địa chỉ</Text>
             <Text style={styles.emptyText}>
@@ -284,7 +285,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
-  emptyEmoji: { fontSize: 36 },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',

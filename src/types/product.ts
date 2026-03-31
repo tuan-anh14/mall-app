@@ -1,3 +1,18 @@
+export interface ProductSpecification {
+  key: string;
+  value: string;
+}
+
+export interface ProductSeller {
+  id: string;
+  userId: string;
+  storeName: string;
+  storeSlug: string;
+  isVerified: boolean;
+  positiveRating: number;
+  avatar: string | null;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -18,20 +33,17 @@ export interface Product {
   ratingAverage: number;
   reviewCount: number;
   image: string | null;
-  seller: {
-    id: string;
-    storeName: string;
-    isVerified: boolean;
-    positiveRating: number;
-  } | null;
+  seller: ProductSeller | null;
   images: Array<{
     id: string;
     url: string;
+    alt?: string;
     isPrimary: boolean;
     sortOrder: number;
   }>;
   colors: Array<{ id: string; name: string; hexCode: string }>;
   sizes: string[];
+  specifications: ProductSpecification[];
   createdAt: string;
 }
 

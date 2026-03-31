@@ -15,6 +15,7 @@ import { useAddressesQuery, useProfileMutations } from '@hooks/useProfile';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
@@ -138,7 +139,7 @@ export function AddressFormScreen() {
               placeholder="Nhà, Văn phòng..."
               value={label}
               onChangeText={setLabel}
-              leftIcon={<Text style={styles.icon}>🏷️</Text>}
+              leftIcon={<IonIconGlyph name="pricetag-outline" />}
             />
 
             <View style={styles.row}>
@@ -178,7 +179,7 @@ export function AddressFormScreen() {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
-              leftIcon={<Text style={styles.icon}>📞</Text>}
+              leftIcon={<IonIconGlyph name="call-outline" />}
             />
 
             <Input
@@ -191,7 +192,7 @@ export function AddressFormScreen() {
                   setErrors((e) => ({ ...e, street: undefined }));
               }}
               error={errors.street}
-              leftIcon={<Text style={styles.icon}>📍</Text>}
+              leftIcon={<IonIconGlyph name="location-outline" />}
             />
 
             <Input
@@ -241,7 +242,7 @@ export function AddressFormScreen() {
               placeholder="Việt Nam"
               value={country}
               onChangeText={setCountry}
-              leftIcon={<Text style={styles.icon}>🌏</Text>}
+              leftIcon={<IonIconGlyph name="globe-outline" />}
             />
 
             {/* Default toggle */}
@@ -311,7 +312,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   flex: { flex: 1 },
-  icon: { fontSize: 16 },
   defaultRow: {
     flexDirection: 'row',
     alignItems: 'center',

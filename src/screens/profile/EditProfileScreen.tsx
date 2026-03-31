@@ -14,6 +14,7 @@ import { useProfileQuery, useProfileMutations } from '@hooks/useProfile';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
@@ -107,7 +108,7 @@ export function EditProfileScreen() {
                 }}
                 autoCapitalize="words"
                 error={errors.firstName}
-                leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+                leftIcon={<IonIconGlyph name="person-outline" />}
               />
 
               <Input
@@ -116,7 +117,7 @@ export function EditProfileScreen() {
                 value={lastName}
                 onChangeText={setLastName}
                 autoCapitalize="words"
-                leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+                leftIcon={<IonIconGlyph name="person-outline" />}
               />
 
               <Input
@@ -125,7 +126,7 @@ export function EditProfileScreen() {
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
-                leftIcon={<Text style={styles.inputIcon}>📞</Text>}
+                leftIcon={<IonIconGlyph name="call-outline" />}
               />
             </View>
           )}
@@ -206,7 +207,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   form: { gap: 16 },
-  inputIcon: { fontSize: 16 },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,

@@ -13,6 +13,8 @@ import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
+import { Ionicons } from '@expo/vector-icons';
 import { getApiErrorMessage } from '@utils/index';
 import type { AuthStackParamList } from '@app/navigation/types';
 
@@ -87,7 +89,7 @@ export function RegisterScreen() {
                 }}
                 autoCapitalize="words"
                 error={errors.name}
-                leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+                leftIcon={<IonIconGlyph name="person-outline" />}
               />
 
               <Input
@@ -100,7 +102,7 @@ export function RegisterScreen() {
                 }}
                 keyboardType="email-address"
                 error={errors.email}
-                leftIcon={<Text style={styles.inputIcon}>✉</Text>}
+                leftIcon={<IonIconGlyph name="mail-outline" />}
               />
 
               <Input
@@ -114,11 +116,13 @@ export function RegisterScreen() {
                 }}
                 secureTextEntry={!showPassword}
                 error={errors.password}
-                leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+                leftIcon={<IonIconGlyph name="lock-closed-outline" />}
                 rightIcon={
-                  <Text style={styles.inputIcon}>
-                    {showPassword ? '🙈' : '👁'}
-                  </Text>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="#6B7280"
+                  />
                 }
                 onRightIconPress={() => setShowPassword((v) => !v)}
               />
@@ -210,7 +214,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   form: { gap: 16 },
-  inputIcon: { fontSize: 16 },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { type RootStackParamList } from './types';
 import { TabNavigator } from './TabNavigator';
 import { AuthNavigator } from './AuthNavigator';
+import { ProductDetailScreen } from '@screens/ProductDetailScreen';
 import { useAuthStore } from '@store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,11 +23,18 @@ export function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <Stack.Screen name="Main" component={TabNavigator} />
+        <>
+          <Stack.Screen name="Main" component={TabNavigator} options={{ animation: 'fade' }} />
+          <Stack.Screen
+            name="ProductDetail"
+            component={ProductDetailScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+        </>
       ) : (
-        <Stack.Screen name="Auth" component={AuthNavigator} />
+        <Stack.Screen name="Auth" component={AuthNavigator} options={{ animation: 'fade' }} />
       )}
     </Stack.Navigator>
   );

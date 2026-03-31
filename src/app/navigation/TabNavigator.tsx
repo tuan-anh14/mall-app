@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity } from 'react-native';
 import { Colors } from '@constants/theme';
+import { useCartStore } from '@store/cartStore';
+import { useNotificationStore } from '@store/notificationStore';
 import { type TabParamList } from './types';
 import { HomeScreen } from '@screens/HomeScreen';
 import { SearchScreen } from '@screens/SearchScreen';
@@ -80,6 +82,9 @@ function TabButton(props: BottomTabBarButtonProps & { cfg: TabCfg; focused: bool
 // ── Navigator ─────────────────────────────────────────
 
 export function TabNavigator() {
+  const cartCount = useCartStore((s) => s.itemCount);
+  const notifCount = useNotificationStore((s) => s.unreadCount);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -90,6 +95,12 @@ export function TabNavigator() {
     >
       {(Object.keys(TABS) as Array<keyof TabParamList>).map((name) => {
         const cfg = TABS[name];
+        const badge =
+          name === 'Cart'
+            ? cartCount
+            : name === 'Notifications'
+              ? notifCount
+              : 0;
         return (
           <Tab.Screen
             key={name}
@@ -97,7 +108,11 @@ export function TabNavigator() {
             component={SCREENS[name]}
             options={{
               tabBarButton: (props) => (
-                <TabButton {...props} cfg={cfg} focused={props.accessibilityState?.selected ?? false} />
+                <TabButton
+                  {...props}
+                  cfg={{ ...cfg, badge }}
+                  focused={props.accessibilityState?.selected ?? false}
+                />
               ),
             }}
           />

@@ -13,6 +13,8 @@ import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
+import { Ionicons } from '@expo/vector-icons';
 import { getApiErrorMessage } from '@utils/index';
 import type { AuthStackParamList } from '@app/navigation/types';
 
@@ -47,7 +49,7 @@ export function ForgotPasswordScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.successEmoji}>📧</Text>
+            <Ionicons name="mail-open-outline" size={48} color="#1A56DB" />
           </View>
           <Text style={styles.successTitle}>Kiểm tra email của bạn</Text>
           <Text style={styles.successText}>
@@ -85,7 +87,7 @@ export function ForgotPasswordScreen() {
           {/* Icon */}
           <View style={styles.iconContainer}>
             <View style={styles.iconCircle}>
-              <Text style={styles.iconEmoji}>🔑</Text>
+              <Ionicons name="key-outline" size={40} color="#1A56DB" />
             </View>
           </View>
 
@@ -107,7 +109,7 @@ export function ForgotPasswordScreen() {
                 }}
                 keyboardType="email-address"
                 error={emailError}
-                leftIcon={<Text style={styles.inputIcon}>✉</Text>}
+                leftIcon={<IonIconGlyph name="mail-outline" />}
               />
             </View>
 
@@ -159,7 +161,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
-  iconEmoji: { fontSize: 36 },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -183,7 +184,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   form: { gap: 16 },
-  inputIcon: { fontSize: 16 },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,
@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BFDBFE',
   },
-  successEmoji: { fontSize: 44 },
   successTitle: {
     fontSize: 22,
     fontWeight: '700',

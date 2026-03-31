@@ -14,6 +14,8 @@ import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
+import { Ionicons } from '@expo/vector-icons';
 import { getApiErrorMessage } from '@utils/index';
 import type { AuthStackParamList } from '@app/navigation/types';
 
@@ -57,7 +59,7 @@ export function ResetPasswordScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.successEmoji}>✅</Text>
+            <Ionicons name="checkmark-circle" size={56} color="#059669" />
           </View>
           <Text style={styles.successTitle}>Đặt lại mật khẩu thành công!</Text>
           <Text style={styles.successText}>
@@ -87,7 +89,7 @@ export function ResetPasswordScreen() {
         {/* Icon */}
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconEmoji}>🔓</Text>
+            <Ionicons name="lock-open-outline" size={40} color="#1A56DB" />
           </View>
         </View>
 
@@ -110,7 +112,7 @@ export function ResetPasswordScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               error={errors.token}
-              leftIcon={<Text style={styles.inputIcon}>🔑</Text>}
+              leftIcon={<IonIconGlyph name="key-outline" />}
             />
 
             <Input
@@ -123,9 +125,13 @@ export function ResetPasswordScreen() {
               }}
               secureTextEntry={!showPassword}
               error={errors.password}
-              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+              leftIcon={<IonIconGlyph name="lock-closed-outline" />}
               rightIcon={
-                <Text style={styles.inputIcon}>{showPassword ? '🙈' : '👁'}</Text>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
               }
               onRightIconPress={() => setShowPassword((v) => !v)}
             />
@@ -141,9 +147,13 @@ export function ResetPasswordScreen() {
               }}
               secureTextEntry={!showConfirm}
               error={errors.confirmPassword}
-              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+              leftIcon={<IonIconGlyph name="lock-closed-outline" />}
               rightIcon={
-                <Text style={styles.inputIcon}>{showConfirm ? '🙈' : '👁'}</Text>
+                <Ionicons
+                  name={showConfirm ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
               }
               onRightIconPress={() => setShowConfirm((v) => !v)}
             />
@@ -197,7 +207,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
-  iconEmoji: { fontSize: 36 },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -221,7 +230,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   form: { gap: 16 },
-  inputIcon: { fontSize: 16 },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,
@@ -256,7 +264,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
-  successEmoji: { fontSize: 44 },
   successTitle: {
     fontSize: 22,
     fontWeight: '700',

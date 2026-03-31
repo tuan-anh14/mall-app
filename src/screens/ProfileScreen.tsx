@@ -9,11 +9,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@hooks/useAuth';
 import { useProfileQuery, useProfileMutations } from '@hooks/useProfile';
 import type { ProfileStackParamList } from '@app/navigation/types';
+import type { IonGlyphName } from '@components/ui/IonIconGlyph';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 
@@ -57,22 +59,23 @@ function InfoRow({ label, value, verified }: { label: string; value: string; ver
 }
 
 function MenuItem({
-  icon,
+  ion,
   label,
   sublabel,
   onPress,
   danger,
 }: {
-  icon: string;
+  ion: IonGlyphName;
   label: string;
   sublabel?: string;
   onPress: () => void;
   danger?: boolean;
 }) {
+  const iconColor = danger ? '#EF4444' : '#4B5563';
   return (
     <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
-        <Text style={styles.menuIconText}>{icon}</Text>
+        <Ionicons name={ion} size={20} color={iconColor} />
       </View>
       <View style={styles.menuContent}>
         <Text style={[styles.menuLabel, danger && styles.menuLabelDanger]}>{label}</Text>
@@ -191,7 +194,7 @@ export function ProfileScreen() {
           <Text style={styles.sectionTitle}>Mua sắm</Text>
 
           <MenuItem
-            icon="📋"
+            ion="receipt-outline"
             label="Đơn hàng của tôi"
             sublabel="Theo dõi và quản lý đơn hàng"
             onPress={() => navigation.navigate('Orders')}
@@ -199,7 +202,7 @@ export function ProfileScreen() {
           <View style={styles.divider} />
 
           <MenuItem
-            icon="❤️"
+            ion="heart-outline"
             label="Yêu thích"
             sublabel="Sản phẩm đã lưu"
             onPress={() => navigation.navigate('Wishlist')}
@@ -207,7 +210,7 @@ export function ProfileScreen() {
           <View style={styles.divider} />
 
           <MenuItem
-            icon="💳"
+            ion="wallet-outline"
             label="Ví của tôi"
             sublabel="Số dư và lịch sử giao dịch"
             onPress={() => navigation.navigate('Wallet')}
@@ -219,7 +222,7 @@ export function ProfileScreen() {
           <Text style={styles.sectionTitle}>Tài khoản</Text>
 
           <MenuItem
-            icon="✏️"
+            ion="create-outline"
             label="Chỉnh sửa hồ sơ"
             sublabel="Tên, số điện thoại"
             onPress={() => navigation.navigate('EditProfile')}
@@ -227,14 +230,14 @@ export function ProfileScreen() {
           <View style={styles.divider} />
 
           <MenuItem
-            icon="🔒"
+            ion="lock-closed-outline"
             label="Đổi mật khẩu"
             onPress={() => navigation.navigate('ChangePassword')}
           />
           <View style={styles.divider} />
 
           <MenuItem
-            icon="📦"
+            ion="location-outline"
             label="Địa chỉ giao hàng"
             sublabel="Quản lý địa chỉ nhận hàng"
             onPress={() => navigation.navigate('Addresses')}
@@ -242,9 +245,9 @@ export function ProfileScreen() {
           <View style={styles.divider} />
 
           <MenuItem
-            icon="⚙️"
+            ion="settings-outline"
             label="Cài đặt"
-            sublabel="Thông báo, ngôn ngữ, tiền tệ"
+            sublabel="Thông báo và tùy chọn"
             onPress={() => navigation.navigate('Settings')}
           />
 
@@ -252,7 +255,7 @@ export function ProfileScreen() {
             <>
               <View style={styles.divider} />
               <MenuItem
-                icon="🏪"
+                ion="storefront-outline"
                 label="Trở thành người bán"
                 onPress={() => navigation.navigate('BecomeSeller')}
               />
@@ -263,7 +266,9 @@ export function ProfileScreen() {
             <>
               <View style={styles.divider} />
               <View style={styles.pendingRow}>
-                <Text style={styles.pendingIcon}>⏳</Text>
+                <View style={styles.pendingIonWrap}>
+                  <Ionicons name="time-outline" size={22} color="#D97706" />
+                </View>
                 <Text style={styles.pendingText}>Yêu cầu bán hàng đang chờ duyệt</Text>
               </View>
             </>
@@ -278,9 +283,14 @@ export function ProfileScreen() {
             disabled={logout.isPending}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutText}>
-              {logout.isPending ? 'Đang đăng xuất...' : '🚪  Đăng xuất'}
-            </Text>
+            <View style={styles.logoutRow}>
+              {!logout.isPending && (
+                <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+              )}
+              <Text style={styles.logoutText}>
+                {logout.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
+              </Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -449,7 +459,6 @@ const styles = StyleSheet.create({
   menuIconDanger: {
     backgroundColor: '#FEF2F2',
   },
-  menuIconText: { fontSize: 18 },
   menuContent: { flex: 1 },
   menuLabel: {
     fontSize: 15,
@@ -472,7 +481,16 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 4,
   },
-  pendingIcon: { fontSize: 20 },
+  pendingIonWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FFFBEB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
   pendingText: {
     fontSize: 14,
     color: '#F59E0B',
@@ -492,6 +510,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#FECACA',
+  },
+  logoutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   logoutText: {
     fontSize: 15,

@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,14 +16,15 @@ import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
+import type { IonGlyphName } from '@components/ui/IonIconGlyph';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'BecomeSeller'>;
 
-const BENEFITS = [
-  { icon: '🏪', text: 'Tạo và quản lý cửa hàng của bạn' },
-  { icon: '📦', text: 'Đăng bán sản phẩm không giới hạn' },
-  { icon: '🎟️', text: 'Tạo mã giảm giá và khuyến mãi' },
-  { icon: '📊', text: 'Xem thống kê doanh thu chi tiết' },
+const BENEFITS: { ion: IonGlyphName; text: string }[] = [
+  { ion: 'storefront-outline', text: 'Tạo và quản lý cửa hàng của bạn' },
+  { ion: 'cube-outline', text: 'Đăng bán sản phẩm không giới hạn' },
+  { ion: 'ticket-outline', text: 'Tạo mã giảm giá và khuyến mãi' },
+  { ion: 'stats-chart-outline', text: 'Xem thống kê doanh thu chi tiết' },
 ];
 
 export function BecomeSellerScreen() {
@@ -40,7 +42,7 @@ export function BecomeSellerScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.successEmoji}>🎉</Text>
+            <Ionicons name="checkmark-circle" size={52} color="#059669" />
           </View>
           <Text style={styles.successTitle}>Yêu cầu đã được gửi!</Text>
           <Text style={styles.successText}>
@@ -70,7 +72,7 @@ export function BecomeSellerScreen() {
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
-            <Text style={styles.heroEmoji}>🏪</Text>
+            <Ionicons name="storefront-outline" size={44} color="#1A56DB" />
           </View>
           <Text style={styles.heroTitle}>Mở cửa hàng ngay hôm nay</Text>
           <Text style={styles.heroSubtitle}>
@@ -83,7 +85,9 @@ export function BecomeSellerScreen() {
           <Text style={styles.sectionTitle}>Quyền lợi của người bán</Text>
           {BENEFITS.map((b, i) => (
             <View key={i} style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>{b.icon}</Text>
+              <View style={styles.benefitIonWrap}>
+                <Ionicons name={b.ion} size={20} color="#1A56DB" />
+              </View>
               <Text style={styles.benefitText}>{b.text}</Text>
             </View>
           ))}
@@ -163,7 +167,6 @@ const styles = StyleSheet.create({
     borderColor: '#BFDBFE',
     marginBottom: 16,
   },
-  heroEmoji: { fontSize: 40 },
   heroTitle: {
     fontSize: 22,
     fontWeight: '700',
@@ -203,7 +206,16 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 14,
   },
-  benefitIcon: { fontSize: 22, width: 28, textAlign: 'center' },
+  benefitIonWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
   benefitText: {
     fontSize: 14,
     color: '#374151',
@@ -286,7 +298,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  successEmoji: { fontSize: 44 },
   successTitle: {
     fontSize: 22,
     fontWeight: '700',

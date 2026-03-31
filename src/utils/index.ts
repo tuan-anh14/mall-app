@@ -24,19 +24,6 @@ export function formatVnd(amount: number): string {
 }
 
 /**
- * Format a number as currency (mặc định VND, locale Việt Nam).
- */
-export function formatCurrency(
-  amount: number,
-  currency = 'VND',
-  locale = 'vi-VN',
-): string {
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
-    amount,
-  );
-}
-
-/**
  * Truncate string with ellipsis
  */
 export function truncate(text: string, maxLength: number): string {

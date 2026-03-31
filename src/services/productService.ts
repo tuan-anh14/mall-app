@@ -33,4 +33,17 @@ export const productService = {
     const res = await api.get<{ product: Product }>(`/api/v1/products/${id}`);
     return res.data.product;
   },
+
+  getRelatedProducts: async (productId: string): Promise<Product[]> => {
+    const res = await api.get<{ products: Product[] }>(`/api/v1/products/${productId}/related`);
+    return res.data.products ?? [];
+  },
+
+  getSimilarProducts: async (productId: string, limit = 8): Promise<Product[]> => {
+    const res = await api.get<{ products: Product[] }>(
+      `/api/v1/recommendations/similar/${productId}`,
+      { params: { limit } },
+    );
+    return res.data.products ?? [];
+  },
 };

@@ -43,8 +43,6 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'price_desc', label: 'Giá cao → thấp' },
 ];
 
-type IonName = React.ComponentProps<typeof Ionicons>['name'];
-
 // ─── Skeleton ─────────────────────────────────────────
 
 const SK = StyleSheet.create({
@@ -90,7 +88,7 @@ function EmptyState({ onClear }: { onClear: () => void }) {
   return (
     <View style={S.empty}>
       <View style={S.emptyIconBox}>
-        <Ionicons name={'search-outline' as IonName} size={32} color="#D1D5DB" />
+        <Ionicons name={'search-outline'} size={32} color="#D1D5DB" />
       </View>
       <Text style={S.emptyTitle}>Không tìm thấy sản phẩm</Text>
       <Text style={S.emptySub}>Thử thay đổi từ khóa hoặc xóa bộ lọc</Text>
@@ -144,7 +142,7 @@ function ActiveTags({
         {tags.map((t) => (
           <TouchableOpacity key={t.label} style={S.tag} onPress={t.onRemove} activeOpacity={0.75}>
             <Text style={S.tagText} numberOfLines={1}>{t.label}</Text>
-            <Ionicons name={'close' as IonName} size={12} color={C.primary} />
+            <Ionicons name={'close'} size={12} color={C.primary} />
           </TouchableOpacity>
         ))}
         <TouchableOpacity style={S.tagClear} onPress={onClearAll} activeOpacity={0.75}>
@@ -182,7 +180,7 @@ function SortMenu({
               {o.label}
             </Text>
             {o.key === current && (
-              <Ionicons name={'checkmark-circle' as IonName} size={18} color={C.primary} />
+              <Ionicons name={'checkmark-circle'} size={18} color={C.primary} />
             )}
           </TouchableOpacity>
         ))}
@@ -243,7 +241,7 @@ function FilterSheet({
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name={'close' as IonName} size={22} color={C.textSub} />
+              <Ionicons name={'close'} size={22} color={C.textSub} />
             </TouchableOpacity>
           </View>
 
@@ -266,7 +264,7 @@ function FilterSheet({
                   >
                     <View style={[FS.checkbox, active && FS.checkboxActive]}>
                       {active && (
-                        <Ionicons name={'checkmark' as IonName} size={13} color="#FFF" />
+                        <Ionicons name={'checkmark'} size={13} color="#FFF" />
                       )}
                     </View>
                     <View style={FS.checkIconWrap}>
@@ -455,7 +453,7 @@ export function SearchScreen() {
         {/* Search bar */}
         <View style={S.searchWrap}>
           <View style={S.searchBar}>
-            <Ionicons name={'search-outline' as IonName} size={16} color={C.primary} />
+            <Ionicons name={'search-outline'} size={16} color={C.primary} />
             <TextInput
               style={S.searchInput}
               placeholder="Tìm sản phẩm, thương hiệu..."
@@ -472,7 +470,7 @@ export function SearchScreen() {
                 onPress={() => { setSearch(''); setDebouncedQ(''); }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons name={'close-circle' as IonName} size={17} color={C.textMuted} />
+                <Ionicons name={'close-circle'} size={17} color={C.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -487,7 +485,7 @@ export function SearchScreen() {
             activeOpacity={0.8}
           >
             <Ionicons
-              name={'options-outline' as IonName} size={15}
+              name={'options-outline'} size={15}
               color={filterCount > 0 ? C.primary : C.textSub}
             />
             <Text style={[S.ctrlBtnText, filterCount > 0 && S.ctrlBtnTextActive]}>
@@ -508,9 +506,9 @@ export function SearchScreen() {
             onPress={() => setSortVisible(true)}
             activeOpacity={0.8}
           >
-            <Ionicons name={'swap-vertical-outline' as IonName} size={15} color={C.textSub} />
+            <Ionicons name={'swap-vertical-outline'} size={15} color={C.textSub} />
             <Text style={S.sortBtnText} numberOfLines={1}>{sortLabel}</Text>
-            <Ionicons name={'chevron-down' as IonName} size={13} color={C.textMuted} />
+            <Ionicons name={'chevron-down'} size={13} color={C.textMuted} />
           </TouchableOpacity>
 
           {/* Count */}

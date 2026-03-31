@@ -13,6 +13,8 @@ import { useProfileMutations } from '@hooks/useProfile';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
+import { Ionicons } from '@expo/vector-icons';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
@@ -55,7 +57,7 @@ export function ChangePasswordScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.successEmoji}>✅</Text>
+            <Ionicons name="checkmark-circle" size={56} color="#059669" />
           </View>
           <Text style={styles.successTitle}>Đổi mật khẩu thành công!</Text>
           <Text style={styles.successText}>
@@ -85,7 +87,7 @@ export function ChangePasswordScreen() {
         {/* Icon */}
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconEmoji}>🔒</Text>
+            <Ionicons name="lock-closed-outline" size={40} color="#1A56DB" />
           </View>
         </View>
 
@@ -108,8 +110,14 @@ export function ChangePasswordScreen() {
               }}
               secureTextEntry={!showCurrent}
               error={errors.currentPassword}
-              leftIcon={<Text style={styles.inputIcon}>🔑</Text>}
-              rightIcon={<Text style={styles.inputIcon}>{showCurrent ? '🙈' : '👁'}</Text>}
+              leftIcon={<IonIconGlyph name="key-outline" />}
+              rightIcon={
+                <Ionicons
+                  name={showCurrent ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
+              }
               onRightIconPress={() => setShowCurrent((v) => !v)}
             />
 
@@ -124,8 +132,14 @@ export function ChangePasswordScreen() {
               }}
               secureTextEntry={!showNew}
               error={errors.newPassword}
-              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-              rightIcon={<Text style={styles.inputIcon}>{showNew ? '🙈' : '👁'}</Text>}
+              leftIcon={<IonIconGlyph name="lock-closed-outline" />}
+              rightIcon={
+                <Ionicons
+                  name={showNew ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
+              }
               onRightIconPress={() => setShowNew((v) => !v)}
             />
 
@@ -140,8 +154,14 @@ export function ChangePasswordScreen() {
               }}
               secureTextEntry={!showConfirm}
               error={errors.confirmPassword}
-              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-              rightIcon={<Text style={styles.inputIcon}>{showConfirm ? '🙈' : '👁'}</Text>}
+              leftIcon={<IonIconGlyph name="lock-closed-outline" />}
+              rightIcon={
+                <Ionicons
+                  name={showConfirm ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
+              }
               onRightIconPress={() => setShowConfirm((v) => !v)}
             />
           </View>
@@ -194,7 +214,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
-  iconEmoji: { fontSize: 36 },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -218,7 +237,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   form: { gap: 16 },
-  inputIcon: { fontSize: 16 },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,
@@ -253,7 +271,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
-  successEmoji: { fontSize: 44 },
   successTitle: {
     fontSize: 22,
     fontWeight: '700',

@@ -14,6 +14,8 @@ import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
+import { IonIconGlyph } from '@components/ui/IonIconGlyph';
+import { Ionicons } from '@expo/vector-icons';
 import { getApiErrorMessage } from '@utils/index';
 import type { AuthStackParamList } from '@app/navigation/types';
 
@@ -51,7 +53,7 @@ export function VerifyEmailScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.successEmoji}>✅</Text>
+            <Ionicons name="checkmark-circle" size={56} color="#059669" />
           </View>
           <Text style={styles.successTitle}>Xác thực thành công!</Text>
           <Text style={styles.successText}>
@@ -80,7 +82,7 @@ export function VerifyEmailScreen() {
 
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconEmoji}>📧</Text>
+            <Ionicons name="mail-outline" size={40} color="#1A56DB" />
           </View>
         </View>
 
@@ -104,7 +106,7 @@ export function VerifyEmailScreen() {
               keyboardType="number-pad"
               maxLength={6}
               error={codeError}
-              leftIcon={<Text style={styles.inputIcon}>🔢</Text>}
+              leftIcon={<IonIconGlyph name="keypad-outline" />}
             />
           </View>
 
@@ -156,7 +158,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
-  iconEmoji: { fontSize: 36 },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -184,7 +185,6 @@ const styles = StyleSheet.create({
     color: '#1A56DB',
   },
   form: { gap: 16 },
-  inputIcon: { fontSize: 16 },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,
@@ -219,7 +219,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
-  successEmoji: { fontSize: 44 },
   successTitle: {
     fontSize: 22,
     fontWeight: '700',

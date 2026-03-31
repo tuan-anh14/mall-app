@@ -32,6 +32,7 @@ export type TabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<TabParamList>;
+  ProductDetail: { productId: string };
 };
 
 declare global {
