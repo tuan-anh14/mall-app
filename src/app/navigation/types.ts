@@ -33,6 +33,7 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<TabParamList>;
   ProductDetail: { productId: string };
+  OrderDetail: { orderId: string };
 };
 
 declare global {

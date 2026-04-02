@@ -38,7 +38,7 @@ import type { Review } from '@typings/review';
 
 const { width: W } = Dimensions.get('window');
 const IMAGE_H = W;
-const CARD_W = (W - 16 * 2 - 12) / 2;
+const CARD_W = (W - 12 * 2 - 12) / 2;
 const EMOJIS = ['😍', '🥰', '😊', '😐', '😔'];
 
 const TRUST_ITEMS = [
@@ -106,6 +106,23 @@ const RB = StyleSheet.create({
   count: { width: 28, fontSize: 11, color: Colors.textMuted },
 });
 
+function BlinkDot() {
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.2, duration: 600, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1,   duration: 600, useNativeDriver: true }),
+      ]),
+    ).start();
+  }, [opacity]);
+  return (
+    <Animated.View
+      style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#D97706', opacity }}
+    />
+  );
+}
+
 interface ReviewCardProps {
   review: Review;
   onHelpful: () => void;
@@ -127,7 +144,9 @@ function ReviewCard({
   onReplySubmit,
   isSubmittingReply,
 }: ReviewCardProps) {
-  const [showReplies, setShowReplies] = useState(false);
+  const [showAllReplies, setShowAllReplies] = useState(false);
+  const firstReply   = review.replies[0] ?? null;
+  const extraReplies = review.replies.slice(1);
 
   return (
     <View style={RC.card}>
@@ -176,20 +195,30 @@ function ReviewCard({
           <Ionicons name="chatbubble-outline" size={14} color={Colors.textSub} />
           <Text style={RC.actionText}>Phản hồi</Text>
         </TouchableOpacity>
-        {review.replies.length > 0 && (
-          <TouchableOpacity
-            style={RC.actionBtn}
-            onPress={() => setShowReplies((v) => !v)}
-          >
-            <Text style={RC.actionText}>
-              {showReplies ? 'Ẩn' : `Xem ${review.replies.length} phản hồi`}
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
 
-      {/* Replies */}
-      {showReplies && review.replies.map((reply) => (
+      {/* First reply — always visible */}
+      {firstReply && (
+        <View style={RC.reply}>
+          <View style={RC.replyAvatarWrap}>
+            {firstReply.user?.avatar ? (
+              <Image source={{ uri: firstReply.user.avatar }} style={RC.replyAvatar} />
+            ) : (
+              <View style={RC.replyAvatarPlaceholder}>
+                <Text style={RC.replyAvatarText}>{initials(firstReply.user?.name)}</Text>
+              </View>
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={RC.replyName}>{firstReply.user?.name ?? 'Ẩn danh'}</Text>
+            <Text style={RC.replyComment}>{firstReply.comment}</Text>
+            <Text style={RC.replyTime}>{timeAgo(firstReply.createdAt)}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Extra replies */}
+      {showAllReplies && extraReplies.map((reply) => (
         <View key={reply.id} style={RC.reply}>
           <View style={RC.replyAvatarWrap}>
             {reply.user?.avatar ? (
@@ -207,6 +236,20 @@ function ReviewCard({
           </View>
         </View>
       ))}
+
+      {/* Toggle extra replies */}
+      {extraReplies.length > 0 && (
+        <TouchableOpacity
+          style={RC.showMoreBtn}
+          onPress={() => setShowAllReplies((v) => !v)}
+        >
+          <Text style={RC.showMoreText}>
+            {showAllReplies
+              ? 'Ẩn bớt'
+              : `Xem thêm ${extraReplies.length} phản hồi`}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Reply form */}
       {isReplying && (
@@ -290,6 +333,8 @@ const RC = StyleSheet.create({
   },
   sendBtnDim: { opacity: 0.5 },
   sendText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  showMoreBtn: { marginTop: 6, paddingLeft: 12 },
+  showMoreText: { fontSize: 12, fontWeight: '600', color: Colors.primary },
 });
 
 // ─── ProductDetailScreen ──────────────────────────────
@@ -640,6 +685,10 @@ export function ProductDetailScreen() {
             <Text style={S.brand}>bởi <Text style={S.brandName}>{product.brand}</Text></Text>
           ) : null}
 
+          {product.description ? (
+            <Text style={S.shortDesc} numberOfLines={3}>{product.description}</Text>
+          ) : null}
+
           <View style={S.ratingRow}>
             <StarRow rating={product.ratingAverage} />
             <Text style={S.ratingValue}>{product.ratingAverage.toFixed(1)}</Text>
@@ -715,7 +764,7 @@ export function ProductDetailScreen() {
           {/* Low stock warning */}
           {isLowStock && (
             <View style={S.lowStock}>
-              <Ionicons name="warning-outline" size={14} color="#D97706" />
+              <BlinkDot />
               <Text style={S.lowStockText}>Chỉ còn {product.stock} sản phẩm</Text>
             </View>
           )}
@@ -976,18 +1025,16 @@ export function ProductDetailScreen() {
         {(relatedProducts?.length ?? 0) > 0 && (
           <View style={S.sectionWrap}>
             <Text style={S.sectionTitle}>Sản phẩm liên quan</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: 12, padding: 4 }}>
-                {relatedProducts!.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    width={CARD_W}
-                    onPress={() => nav.push('ProductDetail', { productId: p.id })}
-                  />
-                ))}
-              </View>
-            </ScrollView>
+            <View style={S.productGrid}>
+              {relatedProducts!.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  width={CARD_W}
+                  onPress={() => nav.push('ProductDetail', { productId: p.id })}
+                />
+              ))}
+            </View>
           </View>
         )}
 
@@ -995,18 +1042,16 @@ export function ProductDetailScreen() {
         {(similarProducts?.length ?? 0) > 0 && (
           <View style={S.sectionWrap}>
             <Text style={S.sectionTitle}>Có thể bạn thích</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: 12, padding: 4 }}>
-                {similarProducts!.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    width={CARD_W}
-                    onPress={() => nav.push('ProductDetail', { productId: p.id })}
-                  />
-                ))}
-              </View>
-            </ScrollView>
+            <View style={S.productGrid}>
+              {similarProducts!.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  width={CARD_W}
+                  onPress={() => nav.push('ProductDetail', { productId: p.id })}
+                />
+              ))}
+            </View>
           </View>
         )}
       </Animated.ScrollView>
@@ -1188,8 +1233,9 @@ const S = StyleSheet.create({
   },
   productBadgeText: { fontSize: 11, fontWeight: '700', color: '#D97706' },
   productName: { fontSize: 20, fontWeight: '800', color: Colors.text, lineHeight: 26, marginBottom: 6 },
-  brand: { fontSize: 13, color: Colors.textSub, marginBottom: 10 },
+  brand: { fontSize: 13, color: Colors.textSub, marginBottom: 6 },
   brandName: { fontWeight: '700', color: Colors.text },
+  shortDesc: { fontSize: 13, color: Colors.textSub, lineHeight: 19, marginBottom: 10 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   ratingValue: { fontSize: 13, fontWeight: '700', color: Colors.text },
   reviewCount: { fontSize: 12, color: Colors.textSub },
@@ -1379,11 +1425,9 @@ const S = StyleSheet.create({
   loadMoreText: { fontSize: 13, fontWeight: '600', color: Colors.primary },
 
   // Related/Similar products
-  sectionWrap: { marginTop: 12, paddingLeft: 12 },
-  sectionTitle: {
-    fontSize: 16, fontWeight: '800', color: Colors.text,
-    marginBottom: 12, paddingRight: 12,
-  },
+  sectionWrap: { marginTop: 12, paddingHorizontal: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: Colors.text, marginBottom: 12 },
+  productGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
 
   // Bottom bar
   bottomBar: {

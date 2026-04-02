@@ -17,7 +17,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@hooks/useAuth';
@@ -25,7 +27,7 @@ import { useCategories, usePromotions, useProducts } from '@hooks/useHome';
 import { ProductCard } from '@components/product/ProductCard';
 import { Colors } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
-import type { TabParamList } from '@app/navigation/types';
+import type { TabParamList, RootStackParamList } from '@app/navigation/types';
 import type { Product, Category, Promotion } from '@typings/product';
 import { formatVnd } from '@utils/index';
 import { resolveCategoryIonIcon } from '@utils/categoryIonIcon';
@@ -145,7 +147,7 @@ function SectionHeader({
 
 const CAROUSEL_H = 200;
 
-function HeroCarousel({ products }: { products: Product[] }) {
+function HeroCarousel({ products, onPress }: { products: Product[]; onPress: (id: string) => void }) {
   const flatRef   = useRef<FlatList>(null);
   const [idx, setIdx] = useState(0);
   const idxRef    = useRef(0);
@@ -182,7 +184,7 @@ function HeroCarousel({ products }: { products: Product[] }) {
         onScroll={onScroll} scrollEventThrottle={16}
         getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
         renderItem={({ item }) => (
-          <TouchableOpacity activeOpacity={0.94} style={S.slide}>
+          <TouchableOpacity activeOpacity={0.94} style={S.slide} onPress={() => onPress(item.id)}>
             <Image
               source={{ uri: item.image! }}
               style={StyleSheet.absoluteFillObject}
@@ -290,14 +292,14 @@ function CategoryCard({
 
 // ─── Product Grid ─────────────────────────────────────
 
-function ProductGrid({ products }: { products: Product[] }) {
+function ProductGrid({ products, onPress }: { products: Product[]; onPress: (id: string) => void }) {
   return (
     <View style={{ gap: GAP }}>
       {Array.from({ length: Math.ceil(products.length / 2) }).map((_, r) => (
         <View key={r} style={{ flexDirection: 'row', gap: GAP }}>
-          <ProductCard product={products[r * 2]} width={CARD_W} />
+          <ProductCard product={products[r * 2]} width={CARD_W} onPress={() => onPress(products[r * 2].id)} />
           {products[r * 2 + 1]
-            ? <ProductCard product={products[r * 2 + 1]} width={CARD_W} />
+            ? <ProductCard product={products[r * 2 + 1]} width={CARD_W} onPress={() => onPress(products[r * 2 + 1].id)} />
             : <View style={{ width: CARD_W }} />}
         </View>
       ))}
@@ -489,7 +491,10 @@ function PromoPopup({ promo, onClose, onShop }: {
 export function HomeScreen() {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const nav = useNavigation<BottomTabNavigationProp<TabParamList>>();
+  const nav = useNavigation<CompositeNavigationProp<
+    BottomTabNavigationProp<TabParamList>,
+    NativeStackNavigationProp<RootStackParamList>
+  >>();
 
   const [search, setSearch]             = useState('');
   const [debouncedSearch, setDebounced] = useState('');
@@ -553,6 +558,7 @@ export function HomeScreen() {
   }
 
   function goToSearch() { nav.navigate('Search'); }
+  function goToProduct(id: string) { nav.navigate('ProductDetail', { productId: id }); }
 
   const firstName    = user?.name?.split(' ')[0];
   const featuredList = featuredData?.products ?? [];
@@ -679,7 +685,7 @@ export function HomeScreen() {
                 ? <SkeletonGrid />
                 : !filteredData?.products?.length
                   ? <EmptyState icon="search-outline" title="Không tìm thấy kết quả" sub="Thử từ khóa hoặc danh mục khác" />
-                  : <ProductGrid products={filteredData.products} />}
+                  : <ProductGrid products={filteredData.products} onPress={goToProduct} />}
             </View>
           </>
 
@@ -692,7 +698,7 @@ export function HomeScreen() {
             {featuredLoading ? (
               <View style={{ height: CAROUSEL_H + 26, backgroundColor: '#E5E7EB' }} />
             ) : hasCarousel ? (
-              <HeroCarousel products={featuredList} />
+              <HeroCarousel products={featuredList} onPress={goToProduct} />
             ) : (
               <View style={S.cardPad}>
                 <HeroBanner firstName={firstName} />
@@ -738,7 +744,7 @@ export function HomeScreen() {
                 ? <SkeletonGrid />
                 : !featuredData?.products?.length
                   ? <EmptyState icon="cube-outline" title="Chưa có sản phẩm nổi bật" />
-                  : <ProductGrid products={featuredList.slice(0, 4)} />}
+                  : <ProductGrid products={featuredList.slice(0, 4)} onPress={goToProduct} />}
             </View>
 
             {/* ── 6. BANNER KHUYẾN MÃI ─────────────────── */}
@@ -773,7 +779,7 @@ export function HomeScreen() {
                     contentContainerStyle={S.recoScroll}
                   >
                     {recoData.products.map((p) => (
-                      <ProductCard key={p.id} product={p} width={CARD_W} />
+                      <ProductCard key={p.id} product={p} width={CARD_W} onPress={() => goToProduct(p.id)} />
                     ))}
                   </ScrollView>
                 ) : null}
@@ -792,7 +798,7 @@ export function HomeScreen() {
                 ? <SkeletonGrid />
                 : !trendingData?.products?.length
                   ? <EmptyState icon="trending-up-outline" title="Chưa có sản phẩm xu hướng" />
-                  : <ProductGrid products={trendingData.products.slice(0, 4)} />}
+                  : <ProductGrid products={trendingData.products.slice(0, 4)} onPress={goToProduct} />}
             </View>
 
           </>

@@ -15,11 +15,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCategories, useInfiniteProducts } from '@hooks/useHome';
 import { ProductCard } from '@components/product/ProductCard';
 import { Colors } from '@constants/theme';
 import type { Category, Product } from '@typings/product';
 import type { GetProductsParams } from '@services/productService';
+import type { RootStackParamList } from '@app/navigation/types';
 import { resolveCategoryIonIcon } from '@utils/categoryIonIcon';
 
 // ─── Layout ───────────────────────────────────────────
@@ -372,6 +375,7 @@ function FilterSheet({
 // ─── SearchScreen ─────────────────────────────────────
 
 export function SearchScreen() {
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [search, setSearch]         = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [catId, setCatId]           = useState<string | null>(null);
@@ -434,8 +438,14 @@ export function SearchScreen() {
   }
 
   const renderItem = useCallback(
-    ({ item }: { item: Product }) => <ProductCard product={item} width={CARD_W} />,
-    [],
+    ({ item }: { item: Product }) => (
+      <ProductCard
+        product={item}
+        width={CARD_W}
+        onPress={() => nav.navigate('ProductDetail', { productId: item.id })}
+      />
+    ),
+    [nav],
   );
 
   const keyExtractor = useCallback((item: Product) => item.id, []);

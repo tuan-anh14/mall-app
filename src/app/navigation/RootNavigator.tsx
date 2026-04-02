@@ -6,6 +6,7 @@ import { type RootStackParamList } from './types';
 import { TabNavigator } from './TabNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { ProductDetailScreen } from '@screens/ProductDetailScreen';
+import { OrderDetailScreen } from '@screens/OrderDetailScreen';
 import { useAuthStore } from '@store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -30,6 +31,11 @@ export function RootNavigator() {
           <Stack.Screen
             name="ProductDetail"
             component={ProductDetailScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="OrderDetail"
+            component={OrderDetailScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </>
