@@ -11,13 +11,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@hooks/useAuth';
 import { useProfileQuery, useProfileMutations } from '@hooks/useProfile';
-import type { ProfileStackParamList } from '@app/navigation/types';
+import type { ProfileStackParamList, RootStackParamList } from '@app/navigation/types';
 import type { IonGlyphName } from '@components/ui/IonIconGlyph';
 
-type Nav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
+type Nav = CompositeNavigationProp<
+  NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 const ROLE_LABEL: Record<string, string> = {
   buyer: 'Người mua',
@@ -94,6 +98,7 @@ export function ProfileScreen() {
 
   const avatarLetter = user?.name?.[0]?.toUpperCase() ?? '?';
   const isBuyer = user?.userType === 'buyer';
+  const isSeller = user?.userType === 'seller';
   const hasPendingRequest = user?.sellerRequestStatus === 'PENDING';
 
   function handleLogout() {
@@ -215,7 +220,36 @@ export function ProfileScreen() {
             sublabel="Số dư và lịch sử giao dịch"
             onPress={() => navigation.navigate('Wallet')}
           />
+          <View style={styles.divider} />
+
+          <MenuItem
+            ion="chatbubbles-outline"
+            label="Hộp thư"
+            sublabel="Tin nhắn với người bán"
+            onPress={() => navigation.navigate('Conversations')}
+          />
+          <View style={styles.divider} />
+
+          <MenuItem
+            ion="time-outline"
+            label="Đã xem gần đây"
+            sublabel="Lịch sử sản phẩm đã xem"
+            onPress={() => navigation.navigate('ViewHistory')}
+          />
         </View>
+
+        {/* Seller Dashboard */}
+        {isSeller && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Cửa hàng</Text>
+            <MenuItem
+              ion="storefront-outline"
+              label="Quản lý cửa hàng"
+              sublabel="Sản phẩm, đơn hàng, doanh thu"
+              onPress={() => navigation.navigate('Seller', { screen: 'SellerDashboard' })}
+            />
+          </View>
+        )}
 
         {/* Account Actions */}
         <View style={styles.card}>

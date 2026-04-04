@@ -3,6 +3,13 @@ import type { Order, OrdersResponse } from '@typings/order';
 
 const BASE = '/api/v1/orders';
 
+export interface CreateOrderDto {
+  addressId: string;
+  paymentMethod: 'WALLET' | 'VNPAY' | 'COD';
+  notes?: string;
+  couponCode?: string;
+}
+
 export const orderService = {
   getOrders: async (params?: {
     page?: number;
@@ -15,6 +22,11 @@ export const orderService = {
 
   getOrderById: async (id: string): Promise<{ order: Order }> => {
     const res = await api.get<{ order: Order }>(`${BASE}/${id}`);
+    return res.data;
+  },
+
+  createOrder: async (data: CreateOrderDto): Promise<{ order: Order }> => {
+    const res = await api.post<{ order: Order }>(BASE, data);
     return res.data;
   },
 

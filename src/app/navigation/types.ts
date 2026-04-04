@@ -19,6 +19,18 @@ export type ProfileStackParamList = {
   Orders: undefined;
   Wishlist: undefined;
   Wallet: undefined;
+  ViewHistory: undefined;
+  Conversations: undefined;
+};
+
+export type SellerStackParamList = {
+  SellerDashboard: undefined;
+  SellerProducts: undefined;
+  SellerProductForm: { productId?: string };
+  SellerOrders: undefined;
+  SellerReviews: undefined;
+  SellerCoupons: undefined;
+  SellerStore: undefined;
 };
 
 export type TabParamList = {
@@ -34,6 +46,9 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<TabParamList>;
   ProductDetail: { productId: string };
   OrderDetail: { orderId: string };
+  Checkout: undefined;
+  ChatRoom: { conversationId: string; sellerName: string };
+  Seller: NavigatorScreenParams<SellerStackParamList>;
 };
 
 declare global {

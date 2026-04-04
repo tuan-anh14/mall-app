@@ -46,4 +46,12 @@ export const productService = {
     );
     return res.data.products ?? [];
   },
+
+  getRecommendations: async (limit = 12): Promise<Product[]> => {
+    const res = await api.get<{ products: Product[] }>(
+      '/api/v1/recommendations',
+      { params: { limit } },
+    );
+    return res.data.products ?? [];
+  },
 };

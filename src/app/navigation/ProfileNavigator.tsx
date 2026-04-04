@@ -8,9 +8,11 @@ import { BecomeSellerScreen } from '@screens/profile/BecomeSellerScreen';
 import { AddressesScreen } from '@screens/profile/AddressesScreen';
 import { AddressFormScreen } from '@screens/profile/AddressFormScreen';
 import { SettingsScreen } from '@screens/profile/SettingsScreen';
+import { ViewHistoryScreen } from '@screens/profile/ViewHistoryScreen';
 import { OrdersScreen } from '@screens/OrdersScreen';
 import { WishlistScreen } from '@screens/WishlistScreen';
 import { WalletScreen } from '@screens/WalletScreen';
+import { ConversationsScreen } from '@screens/ConversationsScreen';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -24,9 +26,11 @@ export function ProfileNavigator() {
       <Stack.Screen name="Addresses" component={AddressesScreen} />
       <Stack.Screen name="AddressForm" component={AddressFormScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="ViewHistory" component={ViewHistoryScreen} />
       <Stack.Screen name="Orders" component={OrdersScreen} />
       <Stack.Screen name="Wishlist" component={WishlistScreen} />
       <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="Conversations" component={ConversationsScreen} />
     </Stack.Navigator>
   );
 }

@@ -15,14 +15,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Colors, Shadows } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import { cartService } from '@services/cartService';
 import { useCartStore } from '@store/cartStore';
 import { formatVnd } from '@utils/index';
 import type { CartItem, CouponInfo } from '@typings/cart';
-import type { TabParamList } from '@app/navigation/types';
+import type { RootStackParamList } from '@app/navigation/types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const FREE_SHIPPING_THRESHOLD = 1_200_000;
 const SHIPPING_FEE = 30_000;
@@ -31,7 +31,7 @@ const TAX_RATE = 0.1;
 const { width: W } = Dimensions.get('window');
 const PROGRESS_W = W - 64;
 
-type NavProp = BottomTabNavigationProp<TabParamList>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 // ─── CartItemRow ──────────────────────────────────────
 
@@ -321,7 +321,7 @@ export function CartScreen() {
           <Text style={S.emptySub}>Thêm sản phẩm để bắt đầu mua sắm</Text>
           <TouchableOpacity
             style={S.exploreBtn}
-            onPress={() => navigation.navigate('Search')}
+            onPress={() => navigation.navigate('Main', { screen: 'Search' })}
           >
             <Ionicons name="compass-outline" size={17} color="#fff" />
             <Text style={S.exploreBtnText}>Khám phá cửa hàng</Text>
@@ -495,9 +495,7 @@ export function CartScreen() {
       <View style={S.checkoutBar}>
         <TouchableOpacity
           style={S.checkoutBtn}
-          onPress={() =>
-            Alert.alert('Thanh toán', 'Tính năng đang phát triển')
-          }
+          onPress={() => navigation.navigate('Checkout')}
           activeOpacity={0.85}
         >
           <Text style={S.checkoutBtnText}>Tiến hành thanh toán</Text>

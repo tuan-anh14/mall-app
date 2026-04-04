@@ -20,4 +20,17 @@ export const QUERY_KEYS = {
   walletStats:   ['wallet', 'stats'] as const,
   related:       (productId: string) => ['related', productId] as const,
   similar:       (productId: string) => ['similar', productId] as const,
+  recommendations: (limit: number) => ['recommendations', limit] as const,
+  // Chat
+  conversations:    ['conversations'] as const,
+  messages:         (conversationId: string) => ['messages', conversationId] as const,
+  // View History
+  viewHistory:      (page: number) => ['viewHistory', page] as const,
+  // Seller
+  sellerStats:      ['seller', 'stats'] as const,
+  sellerSales:      ['seller', 'sales'] as const,
+  sellerProducts:   (search?: string) => ['seller', 'products', search ?? ''] as const,
+  sellerOrders:     (params?: string) => ['seller', 'orders', params ?? ''] as const,
+  sellerReviews:    (params?: string) => ['seller', 'reviews', params ?? ''] as const,
+  sellerCoupons:    ['seller', 'coupons'] as const,
 } as const;

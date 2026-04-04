@@ -5,8 +5,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { type RootStackParamList } from './types';
 import { TabNavigator } from './TabNavigator';
 import { AuthNavigator } from './AuthNavigator';
+import { SellerNavigator } from './SellerNavigator';
 import { ProductDetailScreen } from '@screens/ProductDetailScreen';
 import { OrderDetailScreen } from '@screens/OrderDetailScreen';
+import { CheckoutScreen } from '@screens/CheckoutScreen';
+import { ChatScreen } from '@screens/ChatScreen';
 import { useAuthStore } from '@store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +39,21 @@ export function RootNavigator() {
           <Stack.Screen
             name="OrderDetail"
             component={OrderDetailScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="Checkout"
+            component={CheckoutScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="ChatRoom"
+            component={ChatScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="Seller"
+            component={SellerNavigator}
             options={{ animation: 'slide_from_right' }}
           />
         </>

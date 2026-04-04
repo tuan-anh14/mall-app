@@ -2,6 +2,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { productService, type GetProductsParams } from '@services/productService';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import type { ProductsResponse } from '@typings/product';
+export type { GetProductsParams };
 
 export function useCategories() {
   return useQuery({
@@ -24,6 +25,15 @@ export function useProducts(params: GetProductsParams = {}, enabled = true) {
     queryKey: [...QUERY_KEYS.products, params],
     queryFn: () => productService.getProducts(params),
     staleTime: 1000 * 60 * 3,
+    enabled,
+  });
+}
+
+export function useRecommendations(limit = 8, enabled = true) {
+  return useQuery({
+    queryKey: QUERY_KEYS.recommendations(limit),
+    queryFn: () => productService.getRecommendations(limit),
+    staleTime: 1000 * 60 * 5,
     enabled,
   });
 }

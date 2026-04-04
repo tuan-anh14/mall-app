@@ -28,6 +28,7 @@ import { reviewService } from '@services/reviewService';
 import { wishlistService } from '@services/wishlistService';
 import { viewHistoryService } from '@services/viewHistoryService';
 import { cartService } from '@services/cartService';
+import { chatService } from '@services/chatService';
 import { useCartStore } from '@store/cartStore';
 import { formatVnd } from '@utils/index';
 import { ProductCard } from '@components/product/ProductCard';
@@ -459,6 +460,19 @@ export function ProductDetailScreen() {
     onSuccess: () => refetchWishlist(),
   });
 
+  const chatMutation = useMutation({
+    mutationFn: (sellerId: string) => chatService.createConversation(sellerId),
+    onSuccess: (conversation) => {
+      nav.navigate('ChatRoom', {
+        conversationId: conversation.id,
+        sellerName: conversation.sellerName,
+      });
+    },
+    onError: () => {
+      Alert.alert('Lỗi', 'Không thể mở hộp thư. Vui lòng thử lại.');
+    },
+  });
+
   const reviewMutation = useMutation({
     mutationFn: () =>
       reviewService.createReview({
@@ -836,11 +850,22 @@ export function ProductDetailScreen() {
                 </Text>
               </View>
               <TouchableOpacity
-                style={S.chatBtn}
-                onPress={() => Alert.alert('Chat', 'Tính năng chat đang phát triển')}
+                style={[S.chatBtn, chatMutation.isPending && { opacity: 0.6 }]}
+                onPress={() => {
+                  if (product.seller?.userId) {
+                    chatMutation.mutate(product.seller.userId);
+                  }
+                }}
+                disabled={chatMutation.isPending || !product.seller?.userId}
               >
-                <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.primary} />
-                <Text style={S.chatBtnText}>Nhắn tin</Text>
+                {chatMutation.isPending ? (
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                ) : (
+                  <>
+                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.primary} />
+                    <Text style={S.chatBtnText}>Nhắn tin</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </View>

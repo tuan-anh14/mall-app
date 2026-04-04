@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -126,8 +127,36 @@ export function LoginScreen() {
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>hoặc</Text>
+              <Text style={styles.dividerText}>hoặc đăng nhập bằng</Text>
               <View style={styles.dividerLine} />
+            </View>
+
+            {/* OAuth Buttons */}
+            <View style={styles.oauthRow}>
+              <TouchableOpacity
+                style={styles.oauthBtn}
+                onPress={() => {
+                  // Google OAuth: open browser with /api/v1/auth/google
+                  Alert.alert('Google', 'Đang mở đăng nhập Google...');
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.oauthIconWrap}>
+                  <Text style={styles.oauthIconText}>G</Text>
+                </View>
+                <Text style={styles.oauthBtnText}>Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.oauthBtn}
+                onPress={() => {
+                  Alert.alert('GitHub', 'Đang mở đăng nhập GitHub...');
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="logo-github" size={20} color="#1F2937" />
+                <Text style={styles.oauthBtnText}>GitHub</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.registerRow}>
@@ -234,6 +263,41 @@ const styles = StyleSheet.create({
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
   dividerText: { fontSize: 13, color: '#9CA3AF' },
+  oauthRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 4,
+  },
+  oauthBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+  },
+  oauthIconWrap: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EA4335',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  oauthIconText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#fff',
+  },
+  oauthBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',

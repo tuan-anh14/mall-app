@@ -20,10 +20,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@hooks/useAuth';
-import { useCategories, usePromotions, useProducts } from '@hooks/useHome';
+import { useCategories, usePromotions, useProducts, useRecommendations } from '@hooks/useHome';
+import { wishlistService } from '@services/wishlistService';
 import { ProductCard } from '@components/product/ProductCard';
 import { Colors } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
@@ -292,15 +293,36 @@ function CategoryCard({
 
 // ─── Product Grid ─────────────────────────────────────
 
-function ProductGrid({ products, onPress }: { products: Product[]; onPress: (id: string) => void }) {
+interface ProductGridProps {
+  products: Product[];
+  onPress: (id: string) => void;
+  wishlistedIds?: Set<string>;
+  onWishlist?: (id: string) => void;
+}
+
+function ProductGrid({ products, onPress, wishlistedIds, onWishlist }: ProductGridProps) {
   return (
     <View style={{ gap: GAP }}>
       {Array.from({ length: Math.ceil(products.length / 2) }).map((_, r) => (
         <View key={r} style={{ flexDirection: 'row', gap: GAP }}>
-          <ProductCard product={products[r * 2]} width={CARD_W} onPress={() => onPress(products[r * 2].id)} />
-          {products[r * 2 + 1]
-            ? <ProductCard product={products[r * 2 + 1]} width={CARD_W} onPress={() => onPress(products[r * 2 + 1].id)} />
-            : <View style={{ width: CARD_W }} />}
+          <ProductCard
+            product={products[r * 2]}
+            width={CARD_W}
+            onPress={() => onPress(products[r * 2].id)}
+            isWishlisted={wishlistedIds?.has(products[r * 2].id)}
+            onWishlist={onWishlist ? () => onWishlist(products[r * 2].id) : undefined}
+          />
+          {products[r * 2 + 1] ? (
+            <ProductCard
+              product={products[r * 2 + 1]}
+              width={CARD_W}
+              onPress={() => onPress(products[r * 2 + 1].id)}
+              isWishlisted={wishlistedIds?.has(products[r * 2 + 1].id)}
+              onWishlist={onWishlist ? () => onWishlist(products[r * 2 + 1].id) : undefined}
+            />
+          ) : (
+            <View style={{ width: CARD_W }} />
+          )}
         </View>
       ))}
     </View>
@@ -519,13 +541,35 @@ export function HomeScreen() {
   const { data: trendingData, isLoading: trendingLoading } = useProducts(
     { trending: true, limit: 4 }, !isFiltered,
   );
-  const { data: recoData, isLoading: recoLoading } = useProducts(
-    { sort: 'popular', limit: 6 }, !isFiltered && isAuthenticated,
+  const { data: recoProducts, isLoading: recoLoading } = useRecommendations(
+    8, !isFiltered && isAuthenticated,
   );
   const { data: filteredData, isLoading: filteredLoading } = useProducts(
     { search: debouncedSearch || undefined, category: selectedCat || undefined, limit: 20 },
     isFiltered,
   );
+
+  // Wishlist: fetch once để biết những product nào đã được yêu thích
+  const { data: wishlistData } = useQuery({
+    queryKey: QUERY_KEYS.wishlist,
+    queryFn: wishlistService.getWishlist,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 3,
+  });
+  const wishlistedIds = React.useMemo(
+    () => new Set((wishlistData?.items ?? []).map((i) => i.productId)),
+    [wishlistData],
+  );
+
+  const wishlistMutation = useMutation({
+    mutationFn: (productId: string) =>
+      wishlistedIds.has(productId)
+        ? wishlistService.removeItem(productId)
+        : wishlistService.addItem(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wishlist });
+    },
+  });
 
   // promo popup — once per day
   useEffect(() => {
@@ -606,6 +650,11 @@ export function HomeScreen() {
               returnKeyType="search"
               autoCorrect={false}
               autoCapitalize="none"
+              onSubmitEditing={() => {
+                // Nếu có query, filter inline (debounce đã xử lý)
+                // Tap "Lọc" để mở Search tab với bộ lọc nâng cao
+                setDebounced(search.trim());
+              }}
             />
             {search.length > 0 ? (
               <TouchableOpacity
@@ -685,7 +734,7 @@ export function HomeScreen() {
                 ? <SkeletonGrid />
                 : !filteredData?.products?.length
                   ? <EmptyState icon="search-outline" title="Không tìm thấy kết quả" sub="Thử từ khóa hoặc danh mục khác" />
-                  : <ProductGrid products={filteredData.products} onPress={goToProduct} />}
+                  : <ProductGrid products={filteredData.products} onPress={goToProduct} wishlistedIds={wishlistedIds} onWishlist={(id) => wishlistMutation.mutate(id)} />}
             </View>
           </>
 
@@ -744,7 +793,7 @@ export function HomeScreen() {
                 ? <SkeletonGrid />
                 : !featuredData?.products?.length
                   ? <EmptyState icon="cube-outline" title="Chưa có sản phẩm nổi bật" />
-                  : <ProductGrid products={featuredList.slice(0, 4)} onPress={goToProduct} />}
+                  : <ProductGrid products={featuredList.slice(0, 4)} onPress={goToProduct} wishlistedIds={wishlistedIds} onWishlist={(id) => wishlistMutation.mutate(id)} />}
             </View>
 
             {/* ── 6. BANNER KHUYẾN MÃI ─────────────────── */}
@@ -773,13 +822,20 @@ export function HomeScreen() {
                   >
                     {[0, 1, 2].map((i) => <SkeletonCard key={i} width={CARD_W} />)}
                   </ScrollView>
-                ) : recoData?.products?.length ? (
+                ) : recoProducts && recoProducts.length > 0 ? (
                   <ScrollView
                     horizontal showsHorizontalScrollIndicator={false}
                     contentContainerStyle={S.recoScroll}
                   >
-                    {recoData.products.map((p) => (
-                      <ProductCard key={p.id} product={p} width={CARD_W} onPress={() => goToProduct(p.id)} />
+                    {recoProducts.map((p) => (
+                      <ProductCard
+                        key={p.id}
+                        product={p}
+                        width={CARD_W}
+                        onPress={() => goToProduct(p.id)}
+                        isWishlisted={wishlistedIds.has(p.id)}
+                        onWishlist={() => wishlistMutation.mutate(p.id)}
+                      />
                     ))}
                   </ScrollView>
                 ) : null}
@@ -798,7 +854,7 @@ export function HomeScreen() {
                 ? <SkeletonGrid />
                 : !trendingData?.products?.length
                   ? <EmptyState icon="trending-up-outline" title="Chưa có sản phẩm xu hướng" />
-                  : <ProductGrid products={trendingData.products.slice(0, 4)} onPress={goToProduct} />}
+                  : <ProductGrid products={trendingData.products.slice(0, 4)} onPress={goToProduct} wishlistedIds={wishlistedIds} onWishlist={(id) => wishlistMutation.mutate(id)} />}
             </View>
 
           </>

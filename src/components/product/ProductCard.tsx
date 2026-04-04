@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -38,11 +38,18 @@ interface ProductCardProps {
   product: Product;
   width: number;
   onPress?: () => void;
+  isWishlisted?: boolean;
+  onWishlist?: () => void;
 }
 
-export function ProductCard({ product, width, onPress }: ProductCardProps) {
+export function ProductCard({ product, width, onPress, isWishlisted, onWishlist }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
-  const [wished, setWished] = useState(false);
+  const [wished, setWished] = useState(isWishlisted ?? false);
+
+  // sync nếu prop thay đổi từ ngoài
+  useEffect(() => {
+    if (isWishlisted !== undefined) setWished(isWishlisted);
+  }, [isWishlisted]);
   const imgSize = Math.round(width);
   const badge = product.badge ?? (product.discount ? `−${product.discount}%` : null);
   const hasOriginal = product.originalPrice != null && product.originalPrice > product.price;
@@ -84,7 +91,10 @@ export function ProductCard({ product, width, onPress }: ProductCardProps) {
         {/* Wishlist button */}
         <TouchableOpacity
           style={styles.wishBtn}
-          onPress={() => setWished((v) => !v)}
+          onPress={() => {
+            setWished((v) => !v);   // optimistic
+            onWishlist?.();
+          }}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <Ionicons
