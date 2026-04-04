@@ -125,8 +125,8 @@ export function SellerProductFormScreen() {
       if (p) {
         setName(p.name);
         setDescription(p.description);
-        setPrice(p.price.toString());
-        setStock(p.stock.toString());
+        setPrice((p.price ?? 0).toString());
+        setStock((p.stock ?? 0).toString());
         setDiscount(p.discount != null ? p.discount.toString() : '');
         setBrand(p.brand ?? '');
         setCategoryId(p.categoryId ?? '');

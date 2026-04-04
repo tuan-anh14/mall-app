@@ -18,11 +18,11 @@ export const sellerReviewService = {
     reviewId: string,
     text: string,
   ): Promise<SellerReview> => {
-    const res = await api.post<{ review: SellerReview }>(
+    const res = await api.post<{ reply: SellerReview }>(
       `/api/v1/reviews/${reviewId}/replies`,
-      { text },
+      { comment: text },
     );
-    return res.data.review;
+    return res.data.reply;
   },
 
   deleteReview: async (reviewId: string): Promise<void> => {

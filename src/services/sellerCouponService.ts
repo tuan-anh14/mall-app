@@ -10,19 +10,19 @@ export const sellerCouponService = {
   },
 
   createCoupon: async (data: CreateCouponDto): Promise<SellerCoupon> => {
-    const res = await api.post<{ coupon: SellerCoupon }>(BASE, data);
-    return res.data.coupon;
+    const res = await api.post<SellerCoupon>(BASE, data);
+    return res.data;
   },
 
   updateCoupon: async (
     couponId: string,
     data: UpdateCouponDto,
   ): Promise<SellerCoupon> => {
-    const res = await api.patch<{ coupon: SellerCoupon }>(
+    const res = await api.patch<SellerCoupon>(
       `${BASE}/${couponId}`,
       data,
     );
-    return res.data.coupon;
+    return res.data;
   },
 
   deleteCoupon: async (couponId: string): Promise<void> => {

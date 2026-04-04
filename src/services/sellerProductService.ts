@@ -9,10 +9,10 @@ const BASE = '/api/v1/seller/products';
 
 export const sellerProductService = {
   getProducts: async (search?: string): Promise<SellerProduct[]> => {
-    const res = await api.get<{ products: SellerProduct[] }>(BASE, {
+    const res = await api.get<{ data: SellerProduct[]; stats: any }>(BASE, {
       params: search ? { search } : undefined,
     });
-    return res.data.products;
+    return res.data.data;
   },
 
   createProduct: async (data: CreateProductDto): Promise<SellerProduct> => {
