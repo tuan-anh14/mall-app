@@ -7,6 +7,7 @@ import { TouchableOpacity } from 'react-native';
 import { Colors } from '@constants/theme';
 import { useCartStore } from '@store/cartStore';
 import { useNotificationStore } from '@store/notificationStore';
+import { useAppBadges } from '@hooks/useAppBadges';
 import { type TabParamList } from './types';
 import { HomeScreen } from '@screens/HomeScreen';
 import { SearchScreen } from '@screens/SearchScreen';
@@ -84,6 +85,7 @@ function TabButton(props: BottomTabBarButtonProps & { cfg: TabCfg; focused: bool
 export function TabNavigator() {
   const cartCount = useCartStore((s) => s.itemCount);
   const notifCount = useNotificationStore((s) => s.unreadCount);
+  useAppBadges();
 
   return (
     <Tab.Navigator
