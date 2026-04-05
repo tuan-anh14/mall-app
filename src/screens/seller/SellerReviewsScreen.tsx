@@ -234,6 +234,7 @@ export function SellerReviewsScreen() {
 
       <FlatList
         horizontal
+        style={{ flexGrow: 0, flexShrink: 0 }}
         data={FILTER_OPTS}
         keyExtractor={(f) => f.key}
         renderItem={({ item }) => (

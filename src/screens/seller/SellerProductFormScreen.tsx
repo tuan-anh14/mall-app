@@ -130,9 +130,9 @@ export function SellerProductFormScreen() {
         setDiscount(p.discount != null ? p.discount.toString() : '');
         setBrand(p.brand ?? '');
         setCategoryId(p.categoryId ?? '');
-        setColors(p.colors);
-        setSizes(p.sizes);
-        setImages(p.images);
+        setColors(p.colors ?? []);
+        setSizes(p.sizes ?? []);
+        setImages(p.images ?? []);
       }
     }
   }, [isEdit, productId, existingProducts]);

@@ -5,24 +5,47 @@ const BASE = '/api/v1/seller/coupons';
 
 export const sellerCouponService = {
   getCoupons: async (): Promise<SellerCoupon[]> => {
-    const res = await api.get<{ coupons: SellerCoupon[] }>(BASE);
-    return res.data.coupons;
+    const res = await api.get<{ coupons: any[] }>(BASE);
+    return res.data.coupons.map((c) => ({
+      ...c,
+      discountType: c.type,
+      discountValue: c.value,
+      usageCount: c._count?.usages ?? c.usages ?? 0,
+    })) as SellerCoupon[];
   },
 
   createCoupon: async (data: CreateCouponDto): Promise<SellerCoupon> => {
-    const res = await api.post<SellerCoupon>(BASE, data);
-    return res.data;
+    const payload = {
+      ...data,
+      type: data.discountType,
+      value: data.discountValue,
+    };
+    const res = await api.post<any>(BASE, payload);
+    return {
+      ...res.data,
+      discountType: res.data.type,
+      discountValue: res.data.value,
+    };
   },
 
   updateCoupon: async (
     couponId: string,
     data: UpdateCouponDto,
   ): Promise<SellerCoupon> => {
-    const res = await api.patch<SellerCoupon>(
+    const payload = {
+      ...data,
+      type: data.discountType,
+      value: data.discountValue,
+    };
+    const res = await api.patch<any>(
       `${BASE}/${couponId}`,
-      data,
+      payload,
     );
-    return res.data;
+    return {
+      ...res.data,
+      discountType: res.data.type,
+      discountValue: res.data.value,
+    };
   },
 
   deleteCoupon: async (couponId: string): Promise<void> => {
