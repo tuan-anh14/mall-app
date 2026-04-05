@@ -10,8 +10,21 @@ export const sellerOrderService = {
     page?: number;
     limit?: number;
   }): Promise<SellerOrdersResponse> => {
-    const res = await api.get<SellerOrdersResponse>(BASE, { params });
-    return res.data;
+    const res = await api.get<any>(BASE, { params });
+    const rawData = res.data?.data || [];
+    const orders = rawData.map((o: any) => ({
+      ...o,
+      buyerName: o.customer?.name || 'Khách hàng',
+      buyerEmail: o.customer?.email || '',
+    }));
+    
+    return {
+      orders,
+      total: res.data?.stats?.total || 0,
+      page: params?.page || 1,
+      limit: params?.limit || 10,
+      totalPages: 1,
+    };
   },
 
   updateOrderStatus: async (

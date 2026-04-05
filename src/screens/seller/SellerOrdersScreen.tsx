@@ -24,37 +24,28 @@ import type { SellerStackParamList } from '@app/navigation/types';
 type Nav = NativeStackNavigationProp<SellerStackParamList>;
 
 const STATUS_OPTS = [
-  { key: '', label: 'Tất cả' },
-  { key: 'PENDING', label: 'Chờ xác nhận' },
-  { key: 'CONFIRMED', label: 'Đã xác nhận' },
-  { key: 'PROCESSING', label: 'Đang xử lý' },
-  { key: 'SHIPPED', label: 'Đang giao' },
-  { key: 'DELIVERED', label: 'Đã giao' },
-  { key: 'CANCELLED', label: 'Đã hủy' },
+  { key: 'all', label: 'Tất cả' },
+  { key: 'Processing', label: 'Đang xử lý' },
+  { key: 'Shipped', label: 'Đang giao' },
+  { key: 'Delivered', label: 'Đã giao' },
 ];
 
 const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
-  PENDING:       { text: '#D97706', bg: '#FFFBEB' },
-  CONFIRMED:     { text: Colors.primary, bg: Colors.primaryLight },
-  PROCESSING:    { text: '#7C3AED', bg: '#EDE9FE' },
-  SHIPPED:       { text: '#2563EB', bg: '#EFF6FF' },
-  DELIVERED:     { text: '#059669', bg: '#ECFDF5' },
-  CANCELLED:     { text: '#EF4444', bg: '#FEF2F2' },
-  REFUNDED:      { text: '#6B7280', bg: '#F3F4F6' },
+  Processing:    { text: '#D97706', bg: '#FFFBEB' },
+  Shipped:       { text: '#2563EB', bg: '#EFF6FF' },
+  Delivered:     { text: '#059669', bg: '#ECFDF5' },
+  Cancelled:     { text: '#EF4444', bg: '#FEF2F2' },
+  Refunded:      { text: '#6B7280', bg: '#F3F4F6' },
 };
 
 const NEXT_STATUS: Record<string, string> = {
-  PENDING:    'CONFIRMED',
-  CONFIRMED:  'PROCESSING',
-  PROCESSING: 'SHIPPED',
-  SHIPPED:    'DELIVERED',
+  Processing: 'Shipped',
+  Shipped:    'Delivered',
 };
 
 const NEXT_LABEL: Record<string, string> = {
-  PENDING:    'Xác nhận',
-  CONFIRMED:  'Xử lý',
-  PROCESSING: 'Giao hàng',
-  SHIPPED:    'Đã giao',
+  Processing: 'Giao hàng',
+  Shipped:    'Đã giao',
 };
 
 function OrderCard({
@@ -128,13 +119,13 @@ export function SellerOrdersScreen() {
   const navigation = useNavigation<Nav>();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [activeStatus, setActiveStatus] = useState('');
+  const [activeStatus, setActiveStatus] = useState('all');
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: QUERY_KEYS.sellerOrders(`${activeStatus}-${search}`),
     queryFn: () =>
       sellerOrderService.getOrders({
-        status: activeStatus || undefined,
+        status: activeStatus === 'all' ? undefined : activeStatus,
         search: search || undefined,
       }),
   });
@@ -180,6 +171,7 @@ export function SellerOrdersScreen() {
       {/* Status Filter */}
       <FlatList
         horizontal
+        style={{ flexGrow: 0, flexShrink: 0 }}
         data={STATUS_OPTS}
         keyExtractor={(s) => s.key}
         renderItem={({ item }) => (
