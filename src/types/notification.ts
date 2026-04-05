@@ -1,4 +1,4 @@
-export type NotificationType = 'ORDER' | 'SALE' | 'WISHLIST' | 'PROMOTION' | 'SYSTEM';
+export type NotificationType = 'ORDER' | 'SALE' | 'WISHLIST' | 'PROMOTION' | 'SYSTEM' | 'MESSAGE';
 
 export interface Notification {
   id: string;

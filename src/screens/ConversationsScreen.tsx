@@ -97,6 +97,7 @@ export function ConversationsScreen() {
       navigation.navigate('ChatRoom', {
         conversationId: conv.id,
         sellerName: conv.sellerName,
+        sellerAvatar: conv.sellerAvatar,
       });
     },
     [navigation],

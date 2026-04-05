@@ -39,6 +39,7 @@ const TYPE_META: Record<NotificationType, TypeMeta> = {
   WISHLIST:  { icon: 'heart-outline',      color: '#EC4899',       bg: '#FDF2F8',           label: 'Yêu thích' },
   PROMOTION: { icon: 'gift-outline',       color: '#D97706',       bg: '#FFFBEB',           label: 'Ưu đãi'    },
   SYSTEM:    { icon: 'settings-outline',   color: Colors.textSub, bg: '#F1F5F9',           label: 'Hệ thống'  },
+  MESSAGE:   { icon: 'chatbubble-ellipses-outline', color: Colors.success, bg: '#ECFDF5', label: 'Tin nhắn'  },
 };
 
 // ─── Helpers ──────────────────────────────────────────

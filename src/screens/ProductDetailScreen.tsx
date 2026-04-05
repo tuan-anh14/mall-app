@@ -466,6 +466,7 @@ export function ProductDetailScreen() {
       nav.navigate('ChatRoom', {
         conversationId: conversation.id,
         sellerName: conversation.sellerName,
+        sellerAvatar: conversation.sellerAvatar,
       });
     },
     onError: () => {

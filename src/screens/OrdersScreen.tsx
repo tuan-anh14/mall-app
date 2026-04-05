@@ -253,7 +253,7 @@ export function OrdersScreen() {
 const S = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
 
-  tabsBar:     { flexGrow: 0, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  tabsBar:     { flexGrow: 0, flexShrink: 0, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabsContent: { paddingHorizontal: 12, gap: 4, paddingVertical: 8 },
   tab: {
     paddingHorizontal: 14, paddingVertical: 7,

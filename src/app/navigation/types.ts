@@ -47,7 +47,7 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   OrderDetail: { orderId: string };
   Checkout: undefined;
-  ChatRoom: { conversationId: string; sellerName: string };
+  ChatRoom: { conversationId: string; sellerName: string; sellerAvatar?: string | null };
   Seller: NavigatorScreenParams<SellerStackParamList>;
 };
 

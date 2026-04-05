@@ -48,10 +48,16 @@ function MessageBubble({
   return (
     <View style={[MB.wrapper, isMine ? MB.wrapperRight : MB.wrapperLeft]}>
       {!isMine && (
-        <View style={MB.avatarFallback}>
-          <Text style={MB.avatarLetter}>
-            {msg.senderName?.[0]?.toUpperCase() ?? '?'}
-          </Text>
+        <View style={MB.avatarWrap}>
+          {msg.senderAvatar ? (
+            <Image source={{ uri: msg.senderAvatar }} style={MB.avatar} />
+          ) : (
+            <View style={MB.avatarFallback}>
+              <Text style={MB.avatarLetter}>
+                {msg.senderName?.[0]?.toUpperCase() ?? '?'}
+              </Text>
+            </View>
+          )}
         </View>
       )}
       <TouchableOpacity
@@ -82,7 +88,7 @@ function MessageBubble({
 export function ChatScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { conversationId, sellerName } = route.params;
+  const { conversationId, sellerName, sellerAvatar } = route.params;
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -145,7 +151,7 @@ export function ChatScreen() {
   }
 
   return (
-    <SafeAreaView style={S.safe} edges={['top']}>
+    <SafeAreaView style={S.safe} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={S.header}>
         <TouchableOpacity
@@ -156,9 +162,13 @@ export function ChatScreen() {
         </TouchableOpacity>
         <View style={S.headerMid}>
           <View style={S.headerAvatar}>
-            <Text style={S.headerAvatarLetter}>
-              {sellerName?.[0]?.toUpperCase() ?? '?'}
-            </Text>
+            {sellerAvatar ? (
+              <Image source={{ uri: sellerAvatar }} style={S.headerAvatarImg} />
+            ) : (
+              <Text style={S.headerAvatarLetter}>
+                {sellerName?.[0]?.toUpperCase() ?? '?'}
+              </Text>
+            )}
           </View>
           <View>
             <Text style={S.headerName} numberOfLines={1}>
@@ -172,8 +182,8 @@ export function ChatScreen() {
 
       <KeyboardAvoidingView
         style={S.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 100}
       >
         {isLoading ? (
           <View style={S.center}>
@@ -261,6 +271,16 @@ const MB = StyleSheet.create({
   },
   wrapperRight: { justifyContent: 'flex-end' },
   wrapperLeft: { justifyContent: 'flex-start' },
+  avatarWrap: {
+    width: 32,
+    height: 32,
+    alignSelf: 'flex-end',
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
   avatarFallback: {
     width: 32,
     height: 32,
@@ -268,7 +288,6 @@ const MB = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-end',
   },
   avatarLetter: {
     fontSize: 13,
@@ -333,6 +352,11 @@ const S = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  headerAvatarImg: {
+    width: 38,
+    height: 38,
   },
   headerAvatarLetter: {
     fontSize: 16,
