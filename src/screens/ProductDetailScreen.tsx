@@ -133,6 +133,8 @@ interface ReviewCardProps {
   onReplyChange: (t: string) => void;
   onReplySubmit: () => void;
   isSubmittingReply: boolean;
+  replyModError?: string | null;
+  onClearReplyError?: () => void;
 }
 
 function ReviewCard({
@@ -144,6 +146,8 @@ function ReviewCard({
   onReplyChange,
   onReplySubmit,
   isSubmittingReply,
+  replyModError,
+  onClearReplyError,
 }: ReviewCardProps) {
   const [showAllReplies, setShowAllReplies] = useState(false);
   const firstReply   = review.replies[0] ?? null;
@@ -255,12 +259,18 @@ function ReviewCard({
       {/* Reply form */}
       {isReplying && (
         <View style={RC.replyForm}>
+          {replyModError && (
+            <View style={RC.modErrorBanner}>
+              <Ionicons name="warning-outline" size={14} color={Colors.danger} />
+              <Text style={RC.modErrorText}>{replyModError}</Text>
+            </View>
+          )}
           <TextInput
-            style={RC.replyInput}
+            style={[RC.replyInput, replyModError ? RC.inputError : null]}
             placeholder="Viết phản hồi..."
             placeholderTextColor={Colors.textMuted}
             value={replyText}
-            onChangeText={onReplyChange}
+            onChangeText={(t) => { onReplyChange(t); onClearReplyError?.(); }}
             multiline
           />
           <View style={RC.replyFormActions}>
@@ -336,6 +346,13 @@ const RC = StyleSheet.create({
   sendText: { fontSize: 13, fontWeight: '700', color: '#fff' },
   showMoreBtn: { marginTop: 6, paddingLeft: 12 },
   showMoreText: { fontSize: 12, fontWeight: '600', color: Colors.primary },
+  inputError: { borderColor: Colors.danger, backgroundColor: Colors.dangerLight },
+  modErrorBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+    backgroundColor: Colors.dangerLight, borderWidth: 1, borderColor: Colors.dangerBorder,
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8,
+  },
+  modErrorText: { flex: 1, fontSize: 12, color: Colors.danger, lineHeight: 17 },
 });
 
 // ─── ProductDetailScreen ──────────────────────────────
@@ -380,10 +397,12 @@ export function ProductDetailScreen() {
   const [rFormRating, setRFormRating] = useState(5);
   const [rFormEmoji, setRFormEmoji]   = useState<string | null>(null);
   const [rFormText, setRFormText]     = useState('');
+  const [reviewModError, setReviewModError] = useState<string | null>(null);
 
   // Reply state
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText]   = useState('');
+  const [replyModError, setReplyModError] = useState<string | null>(null);
 
   const imgListRef = useRef<FlatList>(null);
   const setItemCount = useCartStore((s) => s.setItemCount);
@@ -487,8 +506,18 @@ export function ProductDetailScreen() {
       setRFormRating(5);
       setRFormEmoji(null);
       setRFormText('');
+      setReviewModError(null);
       qc.invalidateQueries({ queryKey: QUERY_KEYS.reviews(productId, reviewPage) });
       qc.invalidateQueries({ queryKey: ['review-check', productId] });
+    },
+    onError: (err: any) => {
+      const msg: string =
+        err?.response?.data?.error?.message ?? err?.message ?? 'Không thể gửi đánh giá';
+      if (msg.includes('vi phạm')) {
+        setReviewModError(msg);
+      } else {
+        Alert.alert('Lỗi', msg);
+      }
     },
   });
 
@@ -505,7 +534,17 @@ export function ProductDetailScreen() {
     onSuccess: () => {
       setReplyingTo(null);
       setReplyText('');
+      setReplyModError(null);
       qc.invalidateQueries({ queryKey: QUERY_KEYS.reviews(productId, reviewPage) });
+    },
+    onError: (err: any) => {
+      const msg: string =
+        err?.response?.data?.error?.message ?? err?.message ?? 'Không thể gửi phản hồi';
+      if (msg.includes('vi phạm')) {
+        setReplyModError(msg);
+      } else {
+        Alert.alert('Lỗi', msg);
+      }
     },
   });
 
@@ -536,6 +575,7 @@ export function ProductDetailScreen() {
   function toggleReply(id: string) {
     setReplyingTo((prev) => (prev === id ? null : id));
     setReplyText('');
+    setReplyModError(null);
   }
 
   // ── Loading/Error states ──
@@ -979,13 +1019,20 @@ export function ProductDetailScreen() {
                       </TouchableOpacity>
                     ))}
                   </View>
+                  {/* Moderation error banner */}
+                  {reviewModError && (
+                    <View style={S.modErrorBanner}>
+                      <Ionicons name="warning-outline" size={16} color={Colors.danger} />
+                      <Text style={S.modErrorText}>{reviewModError}</Text>
+                    </View>
+                  )}
                   {/* Comment */}
                   <TextInput
-                    style={S.reviewTextarea}
+                    style={[S.reviewTextarea, reviewModError ? S.inputError : null]}
                     placeholder="Nhận xét của bạn về sản phẩm..."
                     placeholderTextColor={Colors.textMuted}
                     value={rFormText}
-                    onChangeText={setRFormText}
+                    onChangeText={(t) => { setRFormText(t); setReviewModError(null); }}
                     multiline
                     numberOfLines={4}
                   />
@@ -1031,6 +1078,8 @@ export function ProductDetailScreen() {
                       onReplyChange={setReplyText}
                       onReplySubmit={() => replyMutation.mutate({ id: rv.id, text: replyText })}
                       isSubmittingReply={replyMutation.isPending && replyMutation.variables?.id === rv.id}
+                      replyModError={replyingTo === rv.id ? replyModError : null}
+                      onClearReplyError={() => setReplyModError(null)}
                     />
                   ))}
                   {reviewsData && reviewPage < reviewsData.totalPages && (
@@ -1429,6 +1478,13 @@ const S = StyleSheet.create({
     borderRadius: 10, padding: 12, fontSize: 14, color: Colors.text,
     minHeight: 80, textAlignVertical: 'top',
   },
+  inputError: { borderColor: Colors.danger, backgroundColor: Colors.dangerLight },
+  modErrorBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+    backgroundColor: Colors.dangerLight, borderWidth: 1, borderColor: Colors.dangerBorder,
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8,
+  },
+  modErrorText: { flex: 1, fontSize: 13, color: Colors.danger, lineHeight: 18 },
   reviewFormBtns: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end' },
   reviewCancelBtn: {
     paddingHorizontal: 16, paddingVertical: 9,
