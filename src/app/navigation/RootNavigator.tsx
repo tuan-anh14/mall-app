@@ -10,6 +10,7 @@ import { ProductDetailScreen } from '@screens/ProductDetailScreen';
 import { OrderDetailScreen } from '@screens/OrderDetailScreen';
 import { CheckoutScreen } from '@screens/CheckoutScreen';
 import { PaymentScreen } from '@screens/PaymentScreen';
+import { BlogDetailScreen } from '@screens/BlogDetailScreen';
 import { ChatScreen } from '@screens/ChatScreen';
 import { useAuthStore } from '@store/authStore';
 
@@ -51,6 +52,11 @@ export function RootNavigator() {
             name="Payment"
             component={PaymentScreen}
             options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="BlogDetail"
+            component={BlogDetailScreen}
+            options={{ animation: 'slide_from_right', headerShown: true, title: 'Chi tiết bài viết' }}
           />
           <Stack.Screen
             name="ChatRoom"

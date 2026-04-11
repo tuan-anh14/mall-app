@@ -28,14 +28,15 @@ import { wishlistService } from '@services/wishlistService';
 import { ProductCard } from '@components/product/ProductCard';
 import { Colors } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
+import { blogService } from '@services/blogService';
 import type { TabParamList, RootStackParamList } from '@app/navigation/types';
 import type { Product, Category, Promotion } from '@typings/product';
+import type { Blog } from '@typings/blog';
 import { formatVnd } from '@utils/index';
 import { resolveCategoryIonIcon } from '@utils/categoryIonIcon';
 
 /** Ngưỡng gợi ý miễn phí vận chuyển (đồng). */
 const FREE_SHIPPING_FROM_VND = 50_000;
-
 // ─── Layout constants ─────────────────────────────────
 
 const { width: W } = Dimensions.get('window');
@@ -569,7 +570,6 @@ export function HomeScreen() {
     () => new Set((wishlistData?.items ?? []).map((i) => i.productId)),
     [wishlistData],
   );
-
   const wishlistMutation = useMutation({
     mutationFn: (productId: string) =>
       wishlistedIds.has(productId)
@@ -579,6 +579,14 @@ export function HomeScreen() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wishlist });
     },
   });
+
+  // Blogs Data
+  const { data: blogData, isLoading: blogLoading } = useQuery({
+    queryKey: ['blogs', 'published', { limit: 4 }],
+    queryFn: () => blogService.getPublished({ limit: 4 }),
+    staleTime: 1000 * 60 * 5,
+  });
+  const blogs = blogData?.blogs ?? [];
 
   // promo popup — once per day
   useEffect(() => {
@@ -859,6 +867,50 @@ export function HomeScreen() {
               </View>
             )}
 
+            {/* ── 8. TIN TỨC & BLOG ────────────────────── */}
+            <View style={S.card}>
+               <View style={S.secRowPad}>
+                  <SectionHeader
+                    icon="book-outline"
+                    title="Tin tức & Blog"
+                    onMore={() => nav.navigate('Blog')}
+                  />
+                </View>
+                {blogLoading ? (
+                  <ScrollView
+                    horizontal showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[S.recoScroll, { gap: 12 }]}
+                  >
+                    {[0, 1].map((i) => <Bone key={i} w={W * 0.7} h={120} r={16} />)}
+                  </ScrollView>
+                ) : blogs.length > 0 ? (
+                  <ScrollView
+                    horizontal showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={S.recoScroll}
+                  >
+                    {blogs.map((b: Blog) => (
+                      <TouchableOpacity
+                        key={b.id}
+                        style={S.blogMiniCard}
+                        onPress={() => nav.navigate('BlogDetail', { slug: b.slug })}
+                        activeOpacity={0.8}
+                      >
+                        <Image
+                          source={b.thumbnail ? { uri: b.thumbnail } : require('@assets/adaptive-icon.png')}
+                          style={S.blogMiniThumb}
+                        />
+                        <View style={S.blogMiniInfo}>
+                          <Text style={S.blogMiniTitle} numberOfLines={2}>{b.title}</Text>
+                          <Text style={S.blogMiniDate}>
+                            {new Date(b.createdAt).toLocaleDateString('vi-VN')}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : null}
+            </View>
+
             {/* ── 9. XU HƯỚNG HIỆN TẠI ─────────────────── */}
             <View style={S.cardPad}>
               <SectionHeader
@@ -1111,6 +1163,39 @@ const S = StyleSheet.create({
   catNameActive: { color: C.primary },
   catCount:      { fontSize: 10, color: C.textMuted },
   catCountActive: { color: C.primary, fontWeight: '600' },
+
+  // ── BLOG MINI CARD ────────────────────────────────────
+  blogMiniCard: {
+    width: W * 0.7,
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
+    height: 100,
+  },
+  blogMiniThumb: {
+    width: 100,
+    height: '100%',
+    backgroundColor: C.inputBg,
+  },
+  blogMiniInfo: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'center',
+    gap: 4,
+  },
+  blogMiniTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.text,
+    lineHeight: 18,
+  },
+  blogMiniDate: {
+    fontSize: 11,
+    color: C.textMuted,
+  },
 
   // ── FILTER CHIPS ──────────────────────────────────────
 

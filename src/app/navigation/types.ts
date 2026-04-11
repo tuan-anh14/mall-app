@@ -38,6 +38,7 @@ export type TabParamList = {
   Search: undefined;
   Cart: undefined;
   Notifications: undefined;
+  Blog: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
@@ -48,6 +49,7 @@ export type RootStackParamList = {
   OrderDetail: { orderId: string };
   Checkout: undefined;
   Payment: { paymentUrl: string; orderId: string };
+  BlogDetail: { slug: string };
   ChatRoom: { conversationId: string; sellerName: string; sellerAvatar?: string | null };
   Seller: NavigatorScreenParams<SellerStackParamList>;
 };

@@ -13,6 +13,7 @@ import { HomeScreen } from '@screens/HomeScreen';
 import { SearchScreen } from '@screens/SearchScreen';
 import { CartScreen } from '@screens/CartScreen';
 import { NotificationsScreen } from '@screens/NotificationsScreen';
+import { BlogScreen } from '@screens/BlogScreen';
 import { ProfileNavigator } from './ProfileNavigator';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -31,6 +32,7 @@ const TABS: Record<keyof TabParamList, TabCfg> = {
   Search:        { label: 'Khám phá',   icon: 'compass-outline',       iconActive: 'compass-sharp' },
   Cart:          { label: 'Giỏ hàng',  icon: 'cart-outline',          iconActive: 'cart-sharp',          badge: 0 },
   Notifications: { label: 'Thông báo', icon: 'notifications-outline', iconActive: 'notifications-sharp', badge: 0 },
+  Blog:          { label: 'Blog',      icon: 'newspaper-outline',     iconActive: 'newspaper-sharp' },
   Profile:       { label: 'Tôi',        icon: 'person-outline',        iconActive: 'person-sharp' },
 };
 
@@ -39,6 +41,7 @@ const SCREENS: Record<keyof TabParamList, React.ComponentType<object>> = {
   Search:        SearchScreen,
   Cart:          CartScreen,
   Notifications: NotificationsScreen,
+  Blog:          BlogScreen,
   Profile:       ProfileNavigator,
 };
 
