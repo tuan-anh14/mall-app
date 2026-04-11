@@ -10,9 +10,10 @@ import type {
 } from '@typings/profile';
 
 export interface UpdateProfileDto {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
+  avatar?: string;
 }
 
 export interface ChangePasswordDto {
@@ -97,5 +98,18 @@ export const userService = {
       data,
     );
     return res.data.settings;
+  },
+
+  uploadAvatar: async (file: any): Promise<{ url: string }> => {
+    const formData = new FormData();
+    // In React Native, file must be { uri, name, type }
+    formData.append('file', file as any);
+
+    const res = await api.post<{ url: string }>('/api/v1/upload/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
   },
 };

@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   name: string;
   userType: 'buyer' | 'seller' | 'admin';
+  avatar?: string | null;
   sellerRequestStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 }
 

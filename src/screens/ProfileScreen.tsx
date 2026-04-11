@@ -1,4 +1,5 @@
 import React from 'react';
+import { AxiosError } from 'axios';
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -121,7 +123,16 @@ export function ProfileScreen() {
         {
           text: 'Xóa tài khoản',
           style: 'destructive',
-          onPress: () => deleteAccount.mutate(),
+          onPress: () =>
+            deleteAccount.mutate(undefined, {
+              onError: (error) => {
+                const axiosError = error as AxiosError<{ message: string }>;
+                const message =
+                  axiosError.response?.data?.message ||
+                  'Không thể xóa tài khoản lúc này. Vui lòng thử lại sau.';
+                Alert.alert('Thông báo', message);
+              },
+            }),
         },
       ],
     );
@@ -138,7 +149,11 @@ export function ProfileScreen() {
         {/* Avatar + Name */}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarLetter}>{avatarLetter}</Text>
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarLetter}>{avatarLetter}</Text>
+            )}
           </View>
           <Text style={styles.userName}>{user?.name}</Text>
           <View style={styles.roleBadge}>
@@ -156,6 +171,7 @@ export function ProfileScreen() {
         {/* Info Card */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Thông tin tài khoản</Text>
+          <Text style={styles.sectionDescription}>Xem và quản lý thông tin liên hệ cá nhân của bạn</Text>
           {profileLoading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color="#1A56DB" />
@@ -197,6 +213,7 @@ export function ProfileScreen() {
         {/* Shopping */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Mua sắm</Text>
+          <Text style={styles.sectionDescription}>Quản lý đơn hàng, ví tiền và hoạt động mua hàng</Text>
 
           <MenuItem
             ion="receipt-outline"
@@ -242,6 +259,7 @@ export function ProfileScreen() {
         {isSeller && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Cửa hàng</Text>
+            <Text style={styles.sectionDescription}>Theo dõi hiệu suất kinh doanh và quản lý gian hàng</Text>
             <MenuItem
               ion="storefront-outline"
               label="Quản lý cửa hàng"
@@ -254,6 +272,7 @@ export function ProfileScreen() {
         {/* Account Actions */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Tài khoản</Text>
+          <Text style={styles.sectionDescription}>Bảo mật, địa chỉ và cài đặt ứng dụng</Text>
 
           <MenuItem
             ion="create-outline"
@@ -337,6 +356,13 @@ export function ProfileScreen() {
               {deleteAccount.isPending ? 'Đang xóa...' : 'Xóa tài khoản'}
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.dangerZone}>
+            <Ionicons name="information-circle-outline" size={14} color="#9CA3AF" />
+            <Text style={styles.dangerText}>
+              Bạn chỉ có thể xóa tài khoản khi ví không còn số dư và không có đơn hàng đang xử lý.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -374,6 +400,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 6,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
   },
   avatarLetter: {
     fontSize: 36,
@@ -422,7 +453,13 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  sectionDescription: {
+    fontSize: 12,
+    color: '#6B7280',
     marginBottom: 16,
+    lineHeight: 18,
   },
   loadingRow: {
     paddingVertical: 12,
@@ -563,5 +600,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9CA3AF',
     textDecorationLine: 'underline',
+  },
+  dangerZone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    marginTop: 4,
+  },
+  dangerText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    flex: 1,
+    lineHeight: 16,
   },
 });

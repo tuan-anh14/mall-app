@@ -627,9 +627,17 @@ export function HomeScreen() {
         <View style={S.header}>
           {/* Row: logo + greeting + actions */}
           <View style={S.hRow}>
-            <View style={S.logoMark}>
-              <Text style={S.logoText}>M</Text>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => nav.navigate('Profile' as any)}
+              style={S.logoMark}
+            >
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={S.avatarImage} />
+              ) : (
+                <Text style={S.logoText}>{firstName ? firstName[0].toUpperCase() : 'M'}</Text>
+              )}
+            </TouchableOpacity>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={S.greetName} numberOfLines={1}>
                 {firstName ? `Xin chào, ${firstName}` : 'Xin chào, bạn'}
@@ -909,6 +917,11 @@ const S = StyleSheet.create({
     shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
   logoText:  { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.5, includeFontPadding: false },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 13,
+  },
   greetName: { fontSize: 14, fontWeight: '700', color: C.text, includeFontPadding: false },
   greetSub:  { fontSize: 11, color: C.textMuted, includeFontPadding: false },
 

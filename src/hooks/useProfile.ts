@@ -65,7 +65,13 @@ export function useProfileMutations() {
     onSuccess: (profileUser) => {
       queryClient.setQueryData(PROFILE_QUERY_KEY, profileUser);
       const authUser = useAuthStore.getState().user;
-      if (authUser) setUser({ ...authUser, name: profileUser.name });
+      if (authUser) {
+        setUser({
+          ...authUser,
+          name: profileUser.name,
+          avatar: profileUser.avatar,
+        });
+      }
     },
   });
 
@@ -110,6 +116,14 @@ export function useProfileMutations() {
     onSuccess: () => useAuthStore.getState().reset(),
   });
 
+  const uploadAvatar = useMutation({
+    mutationFn: (file: any) => userService.uploadAvatar(file),
+    onSuccess: async (data) => {
+      await updateProfile.mutateAsync({ avatar: data.url });
+      queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+    },
+  });
+
   return {
     updateProfile,
     changePassword,
@@ -119,6 +133,7 @@ export function useProfileMutations() {
     deleteAddress,
     updateSettings,
     deleteAccount,
+    uploadAvatar,
   };
 }
 

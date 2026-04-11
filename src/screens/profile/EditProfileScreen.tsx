@@ -6,7 +6,12 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
+  TouchableOpacity,
+  StatusBar,
+  Keyboard,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +20,7 @@ import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import { IonIconGlyph } from '@components/ui/IonIconGlyph';
+import { useAuth } from '@hooks/useAuth';
 import { getApiErrorMessage } from '@utils/index';
 import type { ProfileStackParamList } from '@app/navigation/types';
 
@@ -22,8 +28,9 @@ type Nav = NativeStackNavigationProp<ProfileStackParamList, 'EditProfile'>;
 
 export function EditProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfileQuery();
-  const { updateProfile } = useProfileMutations();
+  const { updateProfile, uploadAvatar } = useProfileMutations();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -69,6 +76,60 @@ export function EditProfileScreen() {
     );
   }
 
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Quyền truy cập',
+          'Vui lòng cho phép truy cập thư viện ảnh để đổi ảnh đại diện.',
+        );
+        return;
+      }
+
+      // Ensure keyboard is closed to avoid layout shifts
+      Keyboard.dismiss();
+
+      // Temporarily hide status bar to prevent overlay issues on some devices
+      StatusBar.setHidden(true, 'fade');
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8, // Slightly lower than 1 to ensure smoother processing on both platforms
+        selectionLimit: 1,
+        allowsMultipleSelection: false,
+      });
+
+      // Restore status bar
+      StatusBar.setHidden(false, 'fade');
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+
+        // Format for React Native FormData
+        const file = {
+          uri: asset.uri,
+          name: asset.fileName || `avatar_${Date.now()}.jpg`,
+          type: asset.mimeType || 'image/jpeg',
+        };
+
+        uploadAvatar.mutate(file, {
+          onError: (err) => {
+            Alert.alert(
+              'Lỗi',
+              getApiErrorMessage(err, 'Không thể tải lên ảnh đại diện.'),
+            );
+          },
+        });
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Đã có lỗi xảy ra khi chọn ảnh.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -79,13 +140,33 @@ export function EditProfileScreen() {
       >
         <ScreenHeader title="Chỉnh sửa hồ sơ" onBack={() => navigation.goBack()} />
 
-        {/* Avatar */}
+        <Text style={styles.screenDescription}>
+          Cập nhật thông tin tài khoản và thông tin liên hệ của bạn để hoàn thiện hồ sơ.
+        </Text>
+
+        {/* Avatar Section */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarLetter}>
-              {(firstName[0] ?? profile?.firstName?.[0] ?? '?').toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handlePickImage}
+            disabled={uploadAvatar.isPending}
+            activeOpacity={0.8}
+          >
+            <View style={styles.avatar}>
+              {uploadAvatar.isPending ? (
+                <ActivityIndicator size="large" color="#FFFFFF" />
+              ) : user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarLetter}>
+                  {(firstName[0] ?? profile?.firstName?.[0] ?? '?').toUpperCase()}
+                </Text>
+              )}
+            </View>
+            <View style={styles.editIconBadge}>
+              <IonIconGlyph name="camera" size={16} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Form Card */}
@@ -169,9 +250,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
+  screenDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
   avatarSection: {
     alignItems: 'center',
     marginBottom: 28,
+  },
+  avatarContainer: {
+    position: 'relative',
   },
   avatar: {
     width: 80,
@@ -180,11 +272,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A56DB',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: '#1A56DB',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 6,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+    resizeMode: 'cover',
+  },
+  editIconBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    backgroundColor: '#1A56DB',
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#F0F5FF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   avatarLetter: { fontSize: 32, fontWeight: '700', color: '#FFFFFF' },
   card: {
