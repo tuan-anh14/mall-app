@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,24 +26,30 @@ import type { RootStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-type PaymentMethod = 'WALLET' | 'VNPAY' | 'COD';
+type PaymentMethod = 'wallet' | 'vnpay' | 'card' | 'cod';
 
 const PAYMENT_OPTIONS: { key: PaymentMethod; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; desc: string }[] = [
   {
-    key: 'WALLET',
+    key: 'wallet',
     label: 'Ví MALL',
     icon: 'wallet-outline',
     desc: 'Thanh toán bằng số dư ví',
   },
   {
-    key: 'VNPAY',
+    key: 'vnpay',
     label: 'VNPAY',
-    icon: 'card-outline',
-    desc: 'Chuyển khoản qua VNPAY',
+    icon: 'qr-code-outline',
+    desc: 'Internet Banking / ATM / QR Code',
   },
   {
-    key: 'COD',
-    label: 'Thanh toán khi nhận hàng',
+    key: 'card',
+    label: 'Thẻ tín dụng/ghi nợ',
+    icon: 'card-outline',
+    desc: 'Thanh toán bằng thẻ',
+  },
+  {
+    key: 'cod',
+    label: 'Thanh toán khi nhận hàng (COD)',
     icon: 'cash-outline',
     desc: 'Trả tiền mặt khi nhận hàng',
   },
@@ -101,7 +108,7 @@ export function CheckoutScreen() {
   const setItemCount = useCartStore((s) => s.setItemCount);
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('WALLET');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wallet');
 
   const { data: addresses = [], isLoading: addressLoading } = useQuery({
     queryKey: QUERY_KEYS.addresses,
@@ -129,6 +136,18 @@ export function CheckoutScreen() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cart });
       setItemCount(0);
       const orderId = res.order.id;
+      if (res.paymentUrl) {
+        Alert.alert('Chuyển hướng', 'Đang chuyển hướng đến cổng thanh toán...', [
+          {
+            text: 'Mở trình duyệt',
+            onPress: () => {
+              Linking.openURL(res.paymentUrl!);
+              navigation.navigate('OrderDetail', { orderId });
+            }
+          }
+        ]);
+        return;
+      }
       navigation.navigate('OrderDetail', { orderId });
     },
     onError: (err: unknown) => {
@@ -158,13 +177,14 @@ export function CheckoutScreen() {
             orderMutation.mutate({
               addressId: selectedAddressId,
               paymentMethod,
+              returnUrl: 'shophub://orders',
             }),
         },
       ],
     );
   }
 
-  const FREE_SHIPPING = 1_200_000;
+  const FREE_SHIPPING = 50_000;
   const SHIPPING_FEE = 30_000;
   const TAX_RATE = 0.1;
   const subtotal = cart?.subtotal ?? 0;

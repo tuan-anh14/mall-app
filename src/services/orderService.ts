@@ -5,9 +5,10 @@ const BASE = '/api/v1/orders';
 
 export interface CreateOrderDto {
   addressId: string;
-  paymentMethod: 'WALLET' | 'VNPAY' | 'COD';
+  paymentMethod: 'wallet' | 'vnpay' | 'card' | 'cod';
   notes?: string;
   couponCode?: string;
+  returnUrl?: string;
 }
 
 export const orderService = {
@@ -25,8 +26,8 @@ export const orderService = {
     return res.data;
   },
 
-  createOrder: async (data: CreateOrderDto): Promise<{ order: Order }> => {
-    const res = await api.post<{ order: Order }>(BASE, data);
+  createOrder: async (data: CreateOrderDto): Promise<{ order: Order; paymentUrl?: string }> => {
+    const res = await api.post<{ order: Order; paymentUrl?: string }>(BASE, data);
     return res.data;
   },
 

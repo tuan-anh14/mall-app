@@ -24,7 +24,7 @@ import type { CartItem, CouponInfo } from '@typings/cart';
 import type { RootStackParamList } from '@app/navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const FREE_SHIPPING_THRESHOLD = 1_200_000;
+const FREE_SHIPPING_THRESHOLD = 50_000;
 const SHIPPING_FEE = 30_000;
 const TAX_RATE = 0.1;
 

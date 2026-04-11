@@ -34,7 +34,7 @@ import { formatVnd } from '@utils/index';
 import { resolveCategoryIonIcon } from '@utils/categoryIonIcon';
 
 /** Ngưỡng gợi ý miễn phí vận chuyển (đồng). */
-const FREE_SHIPPING_FROM_VND = 1_200_000;
+const FREE_SHIPPING_FROM_VND = 50_000;
 
 // ─── Layout constants ─────────────────────────────────
 

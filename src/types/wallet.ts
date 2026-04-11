@@ -1,10 +1,10 @@
 export type WalletTransactionType =
   | 'DEPOSIT'
-  | 'WITHDRAWAL'
-  | 'ORDER_PAYMENT'
-  | 'ORDER_REFUND'
-  | 'INCOME'
-  | 'FEE'
+  | 'WITHDRAW'
+  | 'PAYMENT'
+  | 'REFUND'
+  | 'SELLER_INCOME'
+  | 'SELLER_FEE_DEDUCTED'
   | 'ADJUSTMENT';
 
 export type WalletTransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED';

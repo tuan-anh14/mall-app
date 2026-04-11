@@ -30,13 +30,13 @@ import type { WalletTransaction, WalletTransactionType } from '@typings/wallet';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const TX_CONFIG: Record<WalletTransactionType, { label: string; icon: string; color: string; sign: '+' | '-' }> = {
-  DEPOSIT:       { label: 'Nạp tiền',        icon: 'arrow-down-circle-outline',   color: Colors.success,  sign: '+' },
-  WITHDRAWAL:    { label: 'Rút tiền',         icon: 'arrow-up-circle-outline',     color: Colors.danger,   sign: '-' },
-  ORDER_PAYMENT: { label: 'Thanh toán đơn',  icon: 'cart-outline',                color: Colors.danger,   sign: '-' },
-  ORDER_REFUND:  { label: 'Hoàn tiền đơn',   icon: 'refresh-circle-outline',      color: Colors.success,  sign: '+' },
-  INCOME:        { label: 'Thu nhập',         icon: 'trending-up-outline',         color: Colors.success,  sign: '+' },
-  FEE:           { label: 'Phí dịch vụ',     icon: 'remove-circle-outline',       color: Colors.danger,   sign: '-' },
-  ADJUSTMENT:    { label: 'Điều chỉnh',       icon: 'options-outline',             color: Colors.textSub,  sign: '+' },
+  DEPOSIT:             { label: 'Nạp tiền',        icon: 'arrow-down-circle-outline', color: Colors.success, sign: '+' },
+  WITHDRAW:            { label: 'Rút tiền',         icon: 'arrow-up-circle-outline',   color: Colors.danger,  sign: '-' },
+  PAYMENT:             { label: 'Thanh toán đơn',  icon: 'cart-outline',              color: Colors.danger,  sign: '-' },
+  REFUND:              { label: 'Hoàn tiền đơn',   icon: 'refresh-circle-outline',    color: Colors.success, sign: '+' },
+  SELLER_INCOME:       { label: 'Doanh thu',       icon: 'trending-up-outline',       color: Colors.success, sign: '+' },
+  SELLER_FEE_DEDUCTED: { label: 'Phí dịch vụ',     icon: 'remove-circle-outline',     color: Colors.danger,  sign: '-' },
+  ADJUSTMENT:          { label: 'Điều chỉnh',       icon: 'options-outline',           color: Colors.textSub, sign: '+' },
 };
 
 const QUICK_AMOUNTS = [50_000, 100_000, 200_000, 500_000];
