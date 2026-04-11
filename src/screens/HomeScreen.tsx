@@ -271,13 +271,22 @@ function CategoryCard({
 }: { cat: Category; selected: boolean; onPress: () => void }) {
   const ion = resolveCategoryIonIcon(cat.icon, cat.slug);
   const iconColor = selected ? C.primary : C.textSub;
+  
   return (
     <TouchableOpacity
       style={[S.catCard, selected && S.catCardActive]}
       onPress={onPress} activeOpacity={0.75}
     >
       <View style={[S.catIconWrap, selected && S.catIconWrapActive]}>
-        <Ionicons name={ion} size={22} color={iconColor} />
+        {cat.image ? (
+          <Image 
+            source={{ uri: cat.image }} 
+            style={S.catImage} 
+            resizeMode="cover"
+          />
+        ) : (
+          <Ionicons name={ion} size={22} color={iconColor} />
+        )}
       </View>
       <Text style={[S.catName, selected && S.catNameActive]} numberOfLines={1}>
         {cat.name}
@@ -1089,9 +1098,14 @@ const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  catIconWrapActive: {
+   catIconWrapActive: {
     backgroundColor: '#FFF',
     borderColor: '#93C5FD',
+  },
+  catImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
   },
   catName:       { fontSize: 10, fontWeight: '600', color: C.textSub, textAlign: 'center' },
   catNameActive: { color: C.primary },
