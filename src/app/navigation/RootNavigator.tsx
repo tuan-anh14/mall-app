@@ -9,6 +9,7 @@ import { SellerNavigator } from './SellerNavigator';
 import { ProductDetailScreen } from '@screens/ProductDetailScreen';
 import { OrderDetailScreen } from '@screens/OrderDetailScreen';
 import { CheckoutScreen } from '@screens/CheckoutScreen';
+import { PaymentScreen } from '@screens/PaymentScreen';
 import { ChatScreen } from '@screens/ChatScreen';
 import { useAuthStore } from '@store/authStore';
 
@@ -45,6 +46,11 @@ export function RootNavigator() {
             name="Checkout"
             component={CheckoutScreen}
             options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="Payment"
+            component={PaymentScreen}
+            options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
           />
           <Stack.Screen
             name="ChatRoom"

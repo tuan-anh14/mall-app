@@ -7,8 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Linking,
 } from 'react-native';
+import { MOBILE_RETURN_URL } from './PaymentScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -137,15 +137,10 @@ export function CheckoutScreen() {
       setItemCount(0);
       const orderId = res.order.id;
       if (res.paymentUrl) {
-        Alert.alert('Chuyển hướng', 'Đang chuyển hướng đến cổng thanh toán...', [
-          {
-            text: 'Mở trình duyệt',
-            onPress: () => {
-              Linking.openURL(res.paymentUrl!);
-              navigation.navigate('OrderDetail', { orderId });
-            }
-          }
-        ]);
+        navigation.navigate('Payment', { 
+          paymentUrl: res.paymentUrl, 
+          orderId 
+        });
         return;
       }
       navigation.navigate('OrderDetail', { orderId });
@@ -177,7 +172,7 @@ export function CheckoutScreen() {
             orderMutation.mutate({
               addressId: selectedAddressId,
               paymentMethod,
-              returnUrl: 'shophub://orders',
+              returnUrl: MOBILE_RETURN_URL,
             }),
         },
       ],
