@@ -30,6 +30,7 @@ import { viewHistoryService } from '@services/viewHistoryService';
 import { cartService } from '@services/cartService';
 import { chatService } from '@services/chatService';
 import { useCartStore } from '@store/cartStore';
+import { useAuthStore } from '@store/authStore';
 import { formatVnd } from '@utils/index';
 import { ProductCard } from '@components/product/ProductCard';
 import type { RootStackParamList } from '@app/navigation/types';
@@ -404,6 +405,8 @@ export function ProductDetailScreen() {
   const [replyText, setReplyText]   = useState('');
   const [replyModError, setReplyModError] = useState<string | null>(null);
 
+  const currentUser = useAuthStore((s) => s.user);
+
   const imgListRef = useRef<FlatList>(null);
   const setItemCount = useCartStore((s) => s.setItemCount);
 
@@ -484,8 +487,8 @@ export function ProductDetailScreen() {
     onSuccess: (conversation) => {
       nav.navigate('ChatRoom', {
         conversationId: conversation.id,
-        sellerName: conversation.sellerName,
-        sellerAvatar: conversation.sellerAvatar,
+        otherUserName: conversation.otherUserName,
+        otherUserAvatar: conversation.otherUserAvatar,
       });
     },
     onError: () => {
@@ -891,20 +894,25 @@ export function ProductDetailScreen() {
                 </Text>
               </View>
               <TouchableOpacity
-                style={[S.chatBtn, chatMutation.isPending && { opacity: 0.6 }]}
+                style={[
+                  S.chatBtn, 
+                  (chatMutation.isPending || currentUser?.id === product.seller?.userId) && { opacity: 0.6 }
+                ]}
                 onPress={() => {
                   if (product.seller?.userId) {
                     chatMutation.mutate(product.seller.userId);
                   }
                 }}
-                disabled={chatMutation.isPending || !product.seller?.userId}
+                disabled={chatMutation.isPending || !product.seller?.userId || currentUser?.id === product.seller?.userId}
               >
                 {chatMutation.isPending ? (
                   <ActivityIndicator size="small" color={Colors.primary} />
                 ) : (
                   <>
                     <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.primary} />
-                    <Text style={S.chatBtnText}>Nhắn tin</Text>
+                    <Text style={S.chatBtnText}>
+                      {currentUser?.id === product.seller?.userId ? 'Sản phẩm của bạn' : 'Nhắn tin'}
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>

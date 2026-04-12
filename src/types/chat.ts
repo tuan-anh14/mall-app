@@ -1,11 +1,8 @@
 export interface Conversation {
   id: string;
-  sellerId: string;
-  buyerId: string;
-  sellerName: string;
-  sellerAvatar: string | null;
-  buyerName: string;
-  buyerAvatar: string | null;
+  sellerId: string; // The ID of the Seller record
+  otherUserName: string;
+  otherUserAvatar: string | null;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;

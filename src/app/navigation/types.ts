@@ -50,7 +50,7 @@ export type RootStackParamList = {
   Checkout: undefined;
   Payment: { paymentUrl: string; orderId: string };
   BlogDetail: { slug: string };
-  ChatRoom: { conversationId: string; sellerName: string; sellerAvatar?: string | null };
+  ChatRoom: { conversationId: string; otherUserName: string; otherUserAvatar?: string | null };
   Seller: NavigatorScreenParams<SellerStackParamList>;
 };
 

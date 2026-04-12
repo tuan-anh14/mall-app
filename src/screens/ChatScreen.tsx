@@ -11,6 +11,9 @@ import {
   Platform,
   Alert,
   Image,
+  Modal,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,6 +34,27 @@ import type { RootStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'ChatRoom'>;
+
+const { width: SCREEN_W } = Dimensions.get('window');
+
+const EMOJI_CATEGORIES = [
+  { 
+    title: 'Mặt cười & Cảm xúc', 
+    items: ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳'] 
+  },
+  { 
+    title: 'Cử chỉ & Con người', 
+    items: ['👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👋', '👏', '🙌', '👐', '🤲', '🙏', '🤝', '💅', '🤳', '💪', '🦾'] 
+  },
+  { 
+    title: 'Đồ ăn & Đồ uống', 
+    items: ['🍕', '🍔', '🍟', '🌭', '🥪', '🌮', '🌯', '🥗', '🍿', '🍣', '🍱', '🍤', '🍙', '🍎', '🍓', '🍇', '🍉', '🍌', '🍺', '🥤', '☕️', '🍦', '🍰', '🍫'] 
+  },
+  { 
+    title: 'Biểu tượng & Khác', 
+    items: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '✨', '🔥', '🌟', '💢', '💯', '✅', '❌', '🎁', '🎈', '🛒'] 
+  }
+];
 
 function timeLabel(dateStr: string): string {
   const d = new Date(dateStr);
@@ -89,13 +113,14 @@ function MessageBubble({
 export function ChatScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { conversationId, sellerName, sellerAvatar } = route.params;
+  const { conversationId, otherUserName, otherUserAvatar } = route.params;
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
 
   const [text, setText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const flatRef = useRef<FlatList>(null);
 
   const { data, isLoading, isError } = useQuery({
@@ -107,6 +132,18 @@ export function ChatScreen() {
   const messages = data?.messages ?? [];
 
   // No need for scrollToEnd effect with 'inverted' list
+
+  const handleSelectEmoji = (emoji: string) => {
+    setText(prev => prev + emoji);
+  };
+
+  const toggleEmojiPicker = () => {
+    if (!showEmojiPicker) {
+      // If opening emoji picker, we might want to dismiss keyboard
+      // Keyboard.dismiss(); // Need to import Keyboard if using this
+    }
+    setShowEmojiPicker(!showEmojiPicker);
+  };
 
   const sendMutation = useMutation({
     mutationFn: (msgText: string) =>
@@ -212,19 +249,18 @@ export function ChatScreen() {
         </TouchableOpacity>
         <View style={S.headerMid}>
           <View style={S.headerAvatar}>
-            {sellerAvatar ? (
-              <Image source={{ uri: sellerAvatar }} style={S.headerAvatarImg} />
+            {otherUserAvatar ? (
+              <Image source={{ uri: otherUserAvatar }} style={S.headerAvatarImg} />
             ) : (
               <Text style={S.headerAvatarLetter}>
-                {sellerName?.[0]?.toUpperCase() ?? '?'}
+                {otherUserName?.[0]?.toUpperCase() ?? '?'}
               </Text>
             )}
           </View>
           <View>
             <Text style={S.headerName} numberOfLines={1}>
-              {sellerName}
+              {otherUserName}
             </Text>
-            <Text style={S.headerStatus}>Người bán</Text>
           </View>
         </View>
         <View style={{ width: 24 }} />
@@ -280,7 +316,7 @@ export function ChatScreen() {
         )}
 
         {/* Input Bar */}
-        <View style={[S.inputBar, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 16) : 10 }]}>
+        <View style={[S.inputBar, { paddingBottom: Platform.OS === 'ios' && !showEmojiPicker ? Math.max(insets.bottom, 16) : 10 }]}>
           <TouchableOpacity 
             style={S.attachBtn} 
             onPress={handlePickImage}
@@ -292,6 +328,18 @@ export function ChatScreen() {
               <Ionicons name="image-outline" size={24} color={Colors.primary} />
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={S.attachBtn} 
+            onPress={toggleEmojiPicker}
+          >
+            <Ionicons 
+              name={showEmojiPicker ? "happy" : "happy-outline"} 
+              size={24} 
+              color={showEmojiPicker ? Colors.primary : Colors.textSub} 
+            />
+          </TouchableOpacity>
+
           <TextInput
             style={S.input}
             value={text}
@@ -316,6 +364,30 @@ export function ChatScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Emoji Picker Panel */}
+        {showEmojiPicker && (
+          <View style={[S.emojiPicker, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {EMOJI_CATEGORIES.map((cat, idx) => (
+                <View key={idx} style={S.emojiCatWrap}>
+                  <Text style={S.emojiCatTitle}>{cat.title}</Text>
+                  <View style={S.emojiGrid}>
+                    {cat.items.map((emo, i) => (
+                      <TouchableOpacity 
+                        key={i} 
+                        style={S.emojiItem}
+                        onPress={() => handleSelectEmoji(emo)}
+                      >
+                        <Text style={S.emojiText}>{emo}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -463,6 +535,38 @@ const S = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+  },
+  emojiPicker: {
+    height: 280,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 10,
+  },
+  emojiCatWrap: {
+    paddingHorizontal: 12,
+    marginBottom: 15,
+  },
+  emojiCatTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  emojiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  emojiItem: {
+    width: (SCREEN_W - 24 - (12 * 7)) / 8, // Roughly 8 items per row
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emojiText: {
+    fontSize: 24,
   },
   attachBtn: {
     width: 42,

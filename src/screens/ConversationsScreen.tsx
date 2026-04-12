@@ -40,15 +40,15 @@ function ConversationRow({
   item: Conversation;
   onPress: () => void;
 }) {
-  const initials = item.sellerName
-    ? item.sellerName[0].toUpperCase()
+  const initials = item.otherUserName
+    ? item.otherUserName[0].toUpperCase()
     : '?';
 
   return (
     <TouchableOpacity style={S.row} onPress={onPress} activeOpacity={0.75}>
       <View style={S.avatarWrap}>
-        {item.sellerAvatar ? (
-          <Image source={{ uri: item.sellerAvatar }} style={S.avatar} />
+        {item.otherUserAvatar ? (
+          <Image source={{ uri: item.otherUserAvatar }} style={S.avatar} />
         ) : (
           <View style={S.avatarFallback}>
             <Text style={S.avatarLetter}>{initials}</Text>
@@ -60,7 +60,7 @@ function ConversationRow({
       <View style={S.rowContent}>
         <View style={S.rowTop}>
           <Text style={S.sellerName} numberOfLines={1}>
-            {item.sellerName}
+            {item.otherUserName}
           </Text>
           {item.lastMessageAt && (
             <Text style={S.time}>{timeAgo(item.lastMessageAt)}</Text>
@@ -131,8 +131,8 @@ export function ConversationsScreen() {
     (conv: Conversation) => {
       navigation.navigate('ChatRoom', {
         conversationId: conv.id,
-        sellerName: conv.sellerName,
-        sellerAvatar: conv.sellerAvatar,
+        otherUserName: conv.otherUserName,
+        otherUserAvatar: conv.otherUserAvatar,
       });
     },
     [navigation],

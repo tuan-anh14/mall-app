@@ -11,12 +11,9 @@ const BASE = '/api/v1/conversations';
 function mapConversation(c: any): Conversation {
   return {
     ...c,
-    sellerId: c.otherUser?.id,
-    sellerName: c.otherUser?.name || 'Chưa rõ',
-    sellerAvatar: c.otherUser?.avatar || null,
-    buyerId: c.otherUser?.id,
-    buyerName: c.otherUser?.name || 'Chưa rõ',
-    buyerAvatar: c.otherUser?.avatar || null,
+    otherUserName: c.otherUser?.name || 'Chưa rõ',
+    otherUserAvatar: c.otherUser?.avatar || null,
+    sellerId: c.otherUser?.id, // Keep this for backend identification
   };
 }
 
