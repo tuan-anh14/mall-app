@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -136,6 +137,13 @@ interface ReviewCardProps {
   isSubmittingReply: boolean;
   replyModError?: string | null;
   onClearReplyError?: () => void;
+  // New props for images and emojis
+  replyAssets?: ImagePicker.ImagePickerAsset[];
+  showEmoji?: boolean;
+  onEmojiToggle?: () => void;
+  onPickImage?: () => void;
+  onRemoveImage?: (uri: string) => void;
+  onAddEmoji?: (emoji: string) => void;
 }
 
 function ReviewCard({
@@ -149,10 +157,45 @@ function ReviewCard({
   isSubmittingReply,
   replyModError,
   onClearReplyError,
+  replyAssets = [],
+  showEmoji = false,
+  onEmojiToggle,
+  onPickImage,
+  onRemoveImage,
+  onAddEmoji,
 }: ReviewCardProps) {
   const [showAllReplies, setShowAllReplies] = useState(false);
   const firstReply   = review.replies[0] ?? null;
   const extraReplies = review.replies.slice(1);
+
+  const renderReply = (reply: any) => (
+    <View key={reply.id} style={RC.reply}>
+      <View style={RC.replyAvatarWrap}>
+        {reply.user?.avatar ? (
+          <Image source={{ uri: reply.user.avatar }} style={RC.replyAvatar} />
+        ) : (
+          <View style={RC.replyAvatarPlaceholder}>
+            <Text style={RC.replyAvatarText}>{initials(reply.user?.name)}</Text>
+          </View>
+        )}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={RC.replyName}>{reply.user?.name ?? 'Ẩn danh'}</Text>
+        <Text style={RC.replyComment}>{reply.comment}</Text>
+        {/* Reply images */}
+        {reply.images && reply.images.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {reply.images.map((uri: string, i: number) => (
+                <Image key={i} source={{ uri }} style={RC.replyPreviewImg} />
+              ))}
+            </View>
+          </ScrollView>
+        )}
+        <Text style={RC.replyTime}>{timeAgo(reply.createdAt)}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <View style={RC.card}>
@@ -203,45 +246,9 @@ function ReviewCard({
         </TouchableOpacity>
       </View>
 
-      {/* First reply — always visible */}
-      {firstReply && (
-        <View style={RC.reply}>
-          <View style={RC.replyAvatarWrap}>
-            {firstReply.user?.avatar ? (
-              <Image source={{ uri: firstReply.user.avatar }} style={RC.replyAvatar} />
-            ) : (
-              <View style={RC.replyAvatarPlaceholder}>
-                <Text style={RC.replyAvatarText}>{initials(firstReply.user?.name)}</Text>
-              </View>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={RC.replyName}>{firstReply.user?.name ?? 'Ẩn danh'}</Text>
-            <Text style={RC.replyComment}>{firstReply.comment}</Text>
-            <Text style={RC.replyTime}>{timeAgo(firstReply.createdAt)}</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Extra replies */}
-      {showAllReplies && extraReplies.map((reply) => (
-        <View key={reply.id} style={RC.reply}>
-          <View style={RC.replyAvatarWrap}>
-            {reply.user?.avatar ? (
-              <Image source={{ uri: reply.user.avatar }} style={RC.replyAvatar} />
-            ) : (
-              <View style={RC.replyAvatarPlaceholder}>
-                <Text style={RC.replyAvatarText}>{initials(reply.user?.name)}</Text>
-              </View>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={RC.replyName}>{reply.user?.name ?? 'Ẩn danh'}</Text>
-            <Text style={RC.replyComment}>{reply.comment}</Text>
-            <Text style={RC.replyTime}>{timeAgo(reply.createdAt)}</Text>
-          </View>
-        </View>
-      ))}
+      {/* Replies */}
+      {firstReply && renderReply(firstReply)}
+      {showAllReplies && extraReplies.map(renderReply)}
 
       {/* Toggle extra replies */}
       {extraReplies.length > 0 && (
@@ -266,6 +273,18 @@ function ReviewCard({
               <Text style={RC.modErrorText}>{replyModError}</Text>
             </View>
           )}
+
+          {/* Emoji row when active */}
+          {showEmoji && (
+            <View style={RC.emojiRow}>
+              {EMOJIS.map((e) => (
+                <TouchableOpacity key={e} style={RC.emojiBtn} onPress={() => onAddEmoji?.(e)}>
+                  <Text style={RC.emojiText}>{e}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           <TextInput
             style={[RC.replyInput, replyModError ? RC.inputError : null]}
             placeholder="Viết phản hồi..."
@@ -274,20 +293,51 @@ function ReviewCard({
             onChangeText={(t) => { onReplyChange(t); onClearReplyError?.(); }}
             multiline
           />
+
+          {/* Selected assets preview */}
+          {replyAssets.length > 0 && (
+            <ScrollView horizontal style={{ paddingVertical: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {replyAssets.map((asset) => (
+                  <View key={asset.uri} style={RC.assetWrap}>
+                    <Image source={{ uri: asset.uri }} style={RC.assetImg} />
+                    <TouchableOpacity
+                      style={RC.removeAssetBtn}
+                      onPress={() => onRemoveImage?.(asset.uri)}
+                    >
+                      <Ionicons name="close-circle" size={18} color="rgba(0,0,0,0.6)" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+
           <View style={RC.replyFormActions}>
-            <TouchableOpacity onPress={onReply}>
-              <Text style={RC.cancelText}>Hủy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[RC.sendBtn, (!replyText.trim() || isSubmittingReply) && RC.sendBtnDim]}
-              onPress={onReplySubmit}
-              disabled={!replyText.trim() || isSubmittingReply}
-            >
-              {isSubmittingReply
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={RC.sendText}>Gửi</Text>
-              }
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity onPress={onPickImage}>
+                <Ionicons name="camera-outline" size={20} color={Colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onEmojiToggle}>
+                <Ionicons name={showEmoji ? "happy" : "happy-outline"} size={20} color={showEmoji ? Colors.primary : Colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+              <TouchableOpacity onPress={onReply}>
+                <Text style={RC.cancelText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[RC.sendBtn, (!replyText.trim() && replyAssets.length === 0 || isSubmittingReply) && RC.sendBtnDim]}
+                onPress={onReplySubmit}
+                disabled={(!replyText.trim() && replyAssets.length === 0) || isSubmittingReply}
+              >
+                {isSubmittingReply
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={RC.sendText}>Gửi</Text>
+                }
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -354,6 +404,20 @@ const RC = StyleSheet.create({
     borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8,
   },
   modErrorText: { flex: 1, fontSize: 12, color: Colors.danger, lineHeight: 17 },
+  replyPreviewImg: { width: 50, height: 50, borderRadius: 6 },
+  emojiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  emojiBtn: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    backgroundColor: Colors.inputBg, borderRadius: 6,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  emojiText: { fontSize: 16 },
+  assetWrap: { position: 'relative' },
+  assetImg: { width: 60, height: 60, borderRadius: 8 },
+  removeAssetBtn: {
+    position: 'absolute', top: -5, right: -5,
+    backgroundColor: '#fff', borderRadius: 10,
+  },
 });
 
 // ─── ProductDetailScreen ──────────────────────────────
@@ -404,6 +468,9 @@ export function ProductDetailScreen() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText]   = useState('');
   const [replyModError, setReplyModError] = useState<string | null>(null);
+  const [replyImages, setReplyImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  const [showReplyEmoji, setShowReplyEmoji] = useState(false);
+  const [isUploadingReply, setIsUploadingReply] = useState(false);
 
   const currentUser = useAuthStore((s) => s.user);
 
@@ -532,12 +599,34 @@ export function ProductDetailScreen() {
   });
 
   const replyMutation = useMutation({
-    mutationFn: ({ id, text }: { id: string; text: string }) =>
-      reviewService.createReply(id, text),
+    mutationFn: async ({ id, text, assets }: { id: string; text: string; assets: ImagePicker.ImagePickerAsset[] }) => {
+      let imageUrls: string[] = [];
+      if (assets.length > 0) {
+        setIsUploadingReply(true);
+        try {
+          for (const asset of assets) {
+            const filename = asset.uri.split('/').pop() || 'image.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : `image/jpeg`;
+            const res = await chatService.uploadImage({
+              uri: asset.uri,
+              name: filename,
+              type,
+            });
+            imageUrls = [...imageUrls, ...res.urls];
+          }
+        } finally {
+          setIsUploadingReply(false);
+        }
+      }
+      return reviewService.createReply(id, text, imageUrls);
+    },
     onSuccess: () => {
       setReplyingTo(null);
       setReplyText('');
       setReplyModError(null);
+      setReplyImages([]);
+      setShowReplyEmoji(false);
       qc.invalidateQueries({ queryKey: QUERY_KEYS.reviews(productId, reviewPage) });
     },
     onError: (err: any) => {
@@ -579,6 +668,32 @@ export function ProductDetailScreen() {
     setReplyingTo((prev) => (prev === id ? null : id));
     setReplyText('');
     setReplyModError(null);
+    setReplyImages([]);
+    setShowReplyEmoji(false);
+  }
+
+  async function pickReplyImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện ảnh để gửi hình ảnh.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setReplyImages((prev) => [...prev, ...result.assets].slice(0, 5));
+    }
+  }
+
+  function removeReplyImage(uri: string) {
+    setReplyImages((prev) => prev.filter((a) => a.uri !== uri));
+  }
+
+  function addEmojiToReply(emoji: string) {
+    setReplyText((prev) => prev + emoji);
   }
 
   // ── Loading/Error states ──
@@ -990,7 +1105,7 @@ export function ProductDetailScreen() {
               )}
 
               {/* Review form */}
-              {eligibility?.canReview && !showReviewForm && (
+              {eligibility?.canReview && !showReviewForm && currentUser?.id !== product?.seller?.userId && (
                 <TouchableOpacity
                   style={S.writeReviewBtn}
                   onPress={() => setShowReviewForm(true)}
@@ -1084,10 +1199,17 @@ export function ProductDetailScreen() {
                       isReplying={replyingTo === rv.id}
                       replyText={replyText}
                       onReplyChange={setReplyText}
-                      onReplySubmit={() => replyMutation.mutate({ id: rv.id, text: replyText })}
-                      isSubmittingReply={replyMutation.isPending && replyMutation.variables?.id === rv.id}
+                      onReplySubmit={() => replyMutation.mutate({ id: rv.id, text: replyText, assets: replyImages })}
+                      isSubmittingReply={(replyMutation.isPending || isUploadingReply) && replyingTo === rv.id}
                       replyModError={replyingTo === rv.id ? replyModError : null}
                       onClearReplyError={() => setReplyModError(null)}
+                      // New props
+                      replyAssets={replyingTo === rv.id ? replyImages : []}
+                      showEmoji={replyingTo === rv.id && showReplyEmoji}
+                      onEmojiToggle={() => setShowReplyEmoji(!showReplyEmoji)}
+                      onPickImage={pickReplyImage}
+                      onRemoveImage={removeReplyImage}
+                      onAddEmoji={addEmojiToReply}
                     />
                   ))}
                   {reviewsData && reviewPage < reviewsData.totalPages && (

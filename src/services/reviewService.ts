@@ -31,7 +31,7 @@ export const reviewService = {
     await api.post(`${BASE}/${reviewId}/helpful`);
   },
 
-  createReply: async (reviewId: string, comment: string): Promise<void> => {
-    await api.post(`${BASE}/${reviewId}/replies`, { comment });
+  createReply: async (reviewId: string, comment: string, images?: string[]): Promise<void> => {
+    await api.post(`${BASE}/${reviewId}/replies`, { comment, images });
   },
 };
