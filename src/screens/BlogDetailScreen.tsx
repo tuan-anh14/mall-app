@@ -82,7 +82,7 @@ export function BlogDetailScreen() {
         {/* Header Image */}
         <View style={S.headerImageContainer}>
           {blog.thumbnail ? (
-            <Image source={{ uri: blog.thumbnail }} style={S.headerImage} />
+            <Image source={{ uri: blog.thumbnail ?? undefined }} style={S.headerImage} />
           ) : (
             <View style={[S.headerImage, S.placeholder]}>
               <Ionicons name="image-outline" size={60} color={C.inputBg} />
@@ -115,7 +115,7 @@ export function BlogDetailScreen() {
             <View style={S.authorInfo}>
               <View style={S.avatarContainer}>
                 {blog.author?.avatar ? (
-                  <Image source={{ uri: blog.author.avatar }} style={S.avatar} />
+                  <Image source={{ uri: blog.author.avatar ?? undefined }} style={S.avatar} />
                 ) : (
                   <Text style={S.avatarText}>{blog.author?.name?.charAt(0) ?? 'A'}</Text>
                 )}
