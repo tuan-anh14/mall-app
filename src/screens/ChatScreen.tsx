@@ -12,7 +12,8 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -91,8 +92,10 @@ export function ChatScreen() {
   const { conversationId, sellerName, sellerAvatar } = route.params;
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
+  const insets = useSafeAreaInsets();
 
   const [text, setText] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const flatRef = useRef<FlatList>(null);
 
   const { data, isLoading, isError } = useQuery({
@@ -103,11 +106,7 @@ export function ChatScreen() {
 
   const messages = data?.messages ?? [];
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 100);
-    }
-  }, [messages.length]);
+  // No need for scrollToEnd effect with 'inverted' list
 
   const sendMutation = useMutation({
     mutationFn: (msgText: string) =>
@@ -117,8 +116,41 @@ export function ChatScreen() {
         queryKey: QUERY_KEYS.messages(conversationId),
       });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations });
-      setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     },
+  });
+  
+  const uploadAndSendMutation = useMutation({
+    mutationFn: async (asset: ImagePicker.ImagePickerAsset) => {
+      const filename = asset.uri.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      setIsUploading(true);
+      try {
+        const uploadRes = await chatService.uploadImage({
+          uri: asset.uri,
+          name: filename,
+          type: type,
+        });
+
+        const imageUrl = uploadRes.urls[0];
+        return chatService.sendMessage(conversationId, {
+          text: '📷 Hình ảnh',
+          attachmentUrl: imageUrl,
+          attachmentType: 'image',
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.messages(conversationId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations });
+    },
+    onError: (err) => {
+      console.error('Chat image upload error:', err);
+      Alert.alert('Lỗi', 'Không thể gửi ảnh lúc này. Vui lòng thử lại.');
+    }
   });
 
   const deleteMutation = useMutation({
@@ -150,8 +182,26 @@ export function ChatScreen() {
     ]);
   }
 
+  async function handlePickImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Quyền truy cập', 'Vui lòng cho phép truy cập thư viện để gửi ảnh.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: true,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      uploadAndSendMutation.mutate(result.assets[0]);
+    }
+  }
+
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={S.safe} edges={['top']}>
       {/* Header */}
       <View style={S.header}>
         <TouchableOpacity
@@ -183,7 +233,7 @@ export function ChatScreen() {
       <KeyboardAvoidingView
         style={S.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 100}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
       >
         {isLoading ? (
           <View style={S.center}>
@@ -202,6 +252,7 @@ export function ChatScreen() {
           <FlatList
             ref={flatRef}
             data={messages}
+            inverted
             keyExtractor={(m) => m.id}
             renderItem={({ item }) => {
               const isMine = item.senderId === currentUser?.id;
@@ -215,11 +266,8 @@ export function ChatScreen() {
             }}
             contentContainerStyle={S.listContent}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={() =>
-              flatRef.current?.scrollToEnd({ animated: false })
-            }
             ListEmptyComponent={
-              <View style={S.emptyWrap}>
+              <View style={[S.emptyWrap, { transform: [{ scaleY: -1 }] }]}>
                 <Ionicons
                   name="chatbubble-outline"
                   size={40}
@@ -232,7 +280,18 @@ export function ChatScreen() {
         )}
 
         {/* Input Bar */}
-        <View style={S.inputBar}>
+        <View style={[S.inputBar, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 16) : 10 }]}>
+          <TouchableOpacity 
+            style={S.attachBtn} 
+            onPress={handlePickImage}
+            disabled={isUploading || sendMutation.isPending}
+          >
+            {isUploading ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Ionicons name="image-outline" size={24} color={Colors.primary} />
+            )}
+          </TouchableOpacity>
           <TextInput
             style={S.input}
             value={text}
@@ -242,11 +301,12 @@ export function ChatScreen() {
             multiline
             maxLength={1000}
             returnKeyType="default"
+            editable={!isUploading}
           />
           <TouchableOpacity
-            style={[S.sendBtn, (!text.trim() || sendMutation.isPending) && S.sendBtnDim]}
+            style={[S.sendBtn, (!text.trim() || sendMutation.isPending || isUploading) && S.sendBtnDim]}
             onPress={handleSend}
-            disabled={!text.trim() || sendMutation.isPending}
+            disabled={!text.trim() || sendMutation.isPending || isUploading}
             activeOpacity={0.85}
           >
             {sendMutation.isPending ? (
@@ -397,13 +457,18 @@ const S = StyleSheet.create({
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 10,
+    gap: 8,
     paddingHorizontal: 12,
     paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 16 : 10,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+  },
+  attachBtn: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,

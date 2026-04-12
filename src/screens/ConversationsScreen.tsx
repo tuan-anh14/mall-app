@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -92,6 +92,41 @@ export function ConversationsScreen() {
     refetchInterval: 15_000,
   });
 
+  const unifiedConversations = useMemo(() => {
+    const map = new Map<string, Conversation>();
+
+    conversations.forEach((conv) => {
+      // If we are a buyer, otherUser is the seller. 
+      // The backend returns c.otherUser.id mapped to sellerId in mapConversation.
+      const existing = map.get(conv.sellerId);
+      
+      if (
+        !existing ||
+        (conv.lastMessageAt &&
+          (!existing.lastMessageAt ||
+            new Date(conv.lastMessageAt) > new Date(existing.lastMessageAt)))
+      ) {
+        // This is a newer thread or the first one we found for this seller
+        const totalUnread = (existing?.unreadCount || 0) + conv.unreadCount;
+        map.set(conv.sellerId, {
+          ...conv,
+          unreadCount: totalUnread,
+        });
+      } else {
+        // This is an older thread, we just add its unread count to the summary
+        existing.unreadCount += conv.unreadCount;
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => {
+      if (!a.lastMessageAt) return 1;
+      if (!b.lastMessageAt) return -1;
+      return (
+        new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      );
+    });
+  }, [conversations]);
+
   const handleOpen = useCallback(
     (conv: Conversation) => {
       navigation.navigate('ChatRoom', {
@@ -133,14 +168,14 @@ export function ConversationsScreen() {
     <SafeAreaView style={S.safe} edges={['top']}>
       <Header onBack={() => navigation.goBack()} />
       <FlatList
-        data={conversations}
+        data={unifiedConversations}
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (
           <ConversationRow item={item} onPress={() => handleOpen(item)} />
         )}
         ItemSeparatorComponent={() => <View style={S.separator} />}
         contentContainerStyle={
-          conversations.length === 0 ? S.emptyContent : S.listContent
+          unifiedConversations.length === 0 ? S.emptyContent : S.listContent
         }
         ListEmptyComponent={
           <View style={S.emptyWrap}>

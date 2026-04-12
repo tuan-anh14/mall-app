@@ -73,4 +73,17 @@ export const chatService = {
   ): Promise<void> => {
     await api.delete(`${BASE}/${conversationId}/messages/${messageId}`);
   },
+
+  uploadImage: async (file: any): Promise<{ urls: string[] }> => {
+    const formData = new FormData();
+    // Native FormData requires { uri, name, type }
+    formData.append('files', file);
+
+    const res = await api.post<{ urls: string[] }>('/api/v1/upload/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
 };
