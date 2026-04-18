@@ -21,15 +21,15 @@ export interface SellerProduct {
   price: number;
   stock: number;
   image: string | null;
-  images: string[];
+  images: string[] | any[];
   status: string;
   category: { id: string; name: string } | null;
   categoryId: string | null;
   discount: number | null;
   rating: number | null;
   totalReviews: number;
-  colors: string[];
-  sizes: string[];
+  colors: string[] | any[];
+  sizes: string[] | any[];
   brand: string | null;
   createdAt: string;
 }
@@ -127,10 +127,17 @@ export interface SellerReview {
   rating: number;
   comment: string;
   emoji: string | null;
-  buyerName: string;
-  buyerAvatar: string | null;
-  productName: string;
-  productId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatar: string | null;
+  };
+  product: {
+    id: string;
+    name: string;
+    images: { url: string }[];
+  };
   createdAt: string;
   reply: SellerReviewReply | null;
 }

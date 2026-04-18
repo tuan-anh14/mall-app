@@ -28,6 +28,7 @@ const STATUS_OPTS = [
   { key: 'Processing', label: 'Đang xử lý' },
   { key: 'Shipped', label: 'Đang giao' },
   { key: 'Delivered', label: 'Đã giao' },
+  { key: 'Cancelled', label: 'Đã hủy' },
 ];
 
 const STATUS_COLORS: Record<string, { text: string; bg: string }> = {

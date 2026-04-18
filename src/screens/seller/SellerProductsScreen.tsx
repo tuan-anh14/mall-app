@@ -47,14 +47,18 @@ function ProductRow({
   onDelete: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
+  const mainImage =
+    (product.images as any)?.find((img: any) => img.isPrimary)?.url ??
+    (product.images as any)?.[0]?.url ??
+    null;
   const statusStyle = STATUS_COLORS[product.status] ?? STATUS_COLORS.DRAFT;
 
   return (
     <View style={PR.container}>
       <View style={PR.imgWrap}>
-        {product.image && !imgError ? (
+        {mainImage && !imgError ? (
           <Image
-            source={{ uri: product.image }}
+            source={{ uri: mainImage }}
             style={PR.img}
             resizeMode="cover"
             onError={() => setImgError(true)}

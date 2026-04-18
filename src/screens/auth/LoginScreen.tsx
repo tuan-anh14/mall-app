@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 40,
-    paddingBottom: 32,
+    paddingBottom: 12,
   },
   brand: {
     alignItems: 'center',

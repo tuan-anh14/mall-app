@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@constants/theme';
 import { useCartStore } from '@store/cartStore';
 import { useNotificationStore } from '@store/notificationStore';
@@ -86,6 +87,7 @@ function TabButton(props: BottomTabBarButtonProps & { cfg: TabCfg; focused: bool
 // ── Navigator ─────────────────────────────────────────
 
 export function TabNavigator() {
+  const insets = useSafeAreaInsets();
   const cartCount = useCartStore((s) => s.itemCount);
   const notifCount = useNotificationStore((s) => s.unreadCount);
   useAppBadges();
@@ -95,7 +97,13 @@ export function TabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: S.bar,
+        tabBarStyle: [
+          S.bar,
+          {
+            height: 60 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : 0,
+          },
+        ],
       }}
     >
       {(Object.keys(TABS) as Array<keyof TabParamList>).map((name) => {
@@ -129,14 +137,10 @@ export function TabNavigator() {
 
 // ── Styles ────────────────────────────────────────────
 
-const BAR_H = Platform.OS === 'ios' ? 80 : 62;
-
 const S = StyleSheet.create({
   // The tab bar container
   bar: {
     backgroundColor: Colors.surface,
-    height: BAR_H,
-    paddingBottom: Platform.OS === 'ios' ? 18 : 0,
     paddingTop: 0,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
