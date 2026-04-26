@@ -52,7 +52,7 @@ export function BlogDetailScreen() {
     if (!blog) return;
     try {
       await Share.share({
-        message: `${blog.title}\nXem thêm tại ShopMall!`,
+        message: `${blog.title}\nXem thêm tại ShopHub!`,
         title: blog.title,
       });
     } catch (error) {
@@ -160,7 +160,7 @@ export function BlogDetailScreen() {
                   <Text style={S.viewAll}>Xem tất cả</Text>
                 </TouchableOpacity>
               </View>
-              
+
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.relatedScroll}>
                 {related.map(item => (
                   <TouchableOpacity
