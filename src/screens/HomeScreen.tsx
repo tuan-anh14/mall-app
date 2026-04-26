@@ -954,7 +954,7 @@ const CARD_SHADOW = {
 
 const S = StyleSheet.create({
   safe:          { flex: 1, backgroundColor: C.bg },
-  scrollContent: { paddingBottom: 32 },
+  scrollContent: { paddingBottom: 0 },
 
   // ── HEADER ────────────────────────────────────────────
 

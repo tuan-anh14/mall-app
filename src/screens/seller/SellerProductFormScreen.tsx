@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import {
   View,
   Text,
@@ -106,7 +107,7 @@ export function SellerProductFormScreen() {
   const [colors, setColors] = useState<string[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [imageInput, setImageInput] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: QUERY_KEYS.categories,
@@ -130,9 +131,9 @@ export function SellerProductFormScreen() {
         setDiscount(p.discount != null ? p.discount.toString() : '');
         setBrand(p.brand ?? '');
         setCategoryId(p.categoryId ?? '');
-        setColors(p.colors ?? []);
-        setSizes(p.sizes ?? []);
-        setImages(p.images ?? []);
+        setColors((p.colors as any)?.map((c: any) => c.name) ?? []);
+        setSizes((p.sizes as any)?.map((s: any) => s.value) ?? []);
+        setImages((p.images as any)?.map((img: any) => img.url) ?? []);
       }
     }
   }, [isEdit, productId, existingProducts]);
@@ -145,7 +146,11 @@ export function SellerProductFormScreen() {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     },
-    onError: () => Alert.alert('Lỗi', 'Không thể tạo sản phẩm. Vui lòng thử lại.'),
+    onError: (error: any) => {
+      console.error('Create error:', error.response?.data || error.message);
+      const msg = error.response?.data?.message || 'Không thể tạo sản phẩm. Vui lòng thử lại.';
+      Alert.alert('Lỗi', msg);
+    },
   });
 
   const updateMutation = useMutation({
@@ -157,7 +162,11 @@ export function SellerProductFormScreen() {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     },
-    onError: () => Alert.alert('Lỗi', 'Không thể cập nhật sản phẩm.'),
+    onError: (error: any) => {
+      console.error('Update error:', error.response?.data || error.message);
+      const msg = error.response?.data?.message || 'Không thể cập nhật sản phẩm.';
+      Alert.alert('Lỗi', msg);
+    },
   });
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -190,6 +199,9 @@ export function SellerProductFormScreen() {
       sizes,
       images,
     };
+
+    console.log('Saving product with DTO:', dto);
+
     if (isEdit) {
       updateMutation.mutate(dto);
     } else {
@@ -197,13 +209,54 @@ export function SellerProductFormScreen() {
     }
   }
 
-  function addImage() {
-    const url = imageInput.trim();
-    if (url && !images.includes(url)) {
-      setImages((prev) => [...prev, url]);
-      setImageInput('');
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Quyền truy cập', 'Vui lòng cho phép truy cập thư viện ảnh để tải lên.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+
+      console.log('Image picker result:', result.canceled ? 'canceled' : 'selected');
+
+      if (!result.canceled && result.assets.length > 0) {
+        setIsUploading(true);
+        console.log(`Starting upload of ${result.assets.length} images...`);
+
+        const formData = new FormData();
+
+        result.assets.forEach((asset, index) => {
+          const fileName = asset.uri.split('/').pop() || `image_${index}.jpg`;
+          const match = /\.(\w+)$/.exec(fileName);
+          const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+          formData.append('files', {
+            uri: asset.uri,
+            name: fileName,
+            type,
+          } as any);
+          console.log(`Appended file: ${fileName}, type: ${type}`);
+        });
+
+        const uploadedUrls = await sellerProductService.uploadImages(formData);
+        console.log('Upload success, URLs:', uploadedUrls);
+        setImages((prev) => [...prev, ...uploadedUrls]);
+        Alert.alert('Thành công', `Đã tải lên ${uploadedUrls.length} hình ảnh.`);
+      }
+    } catch (error: any) {
+      console.error('Upload error detail:', error);
+      const msg = error.response?.data?.message || error.message || 'Không rõ lỗi';
+      Alert.alert('Lỗi Upload', `Không thể tải ảnh lên: ${msg}`);
+    } finally {
+      setIsUploading(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
@@ -399,20 +452,20 @@ export function SellerProductFormScreen() {
             </ScrollView>
           )}
 
-          <View style={S.imgInputRow}>
-            <TextInput
-              style={[S.input, S.imgInput]}
-              value={imageInput}
-              onChangeText={setImageInput}
-              placeholder="Dán URL hình ảnh..."
-              placeholderTextColor={Colors.textMuted}
-              returnKeyType="done"
-              onSubmitEditing={addImage}
-            />
-            <TouchableOpacity style={S.imgAddBtn} onPress={addImage}>
-              <Ionicons name="add" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[S.imgAddBtnFull, isUploading && S.imgAddBtnDim]}
+            onPress={pickImage}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="camera-outline" size={22} color="#fff" />
+                <Text style={S.imgAddBtnText}>Thêm hình ảnh từ thư viện</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -573,14 +626,21 @@ const S = StyleSheet.create({
     top: -6,
     right: -6,
   },
-  imgInputRow: { flexDirection: 'row', gap: 8 },
-  imgInput: { flex: 1 },
-  imgAddBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: Colors.primary,
+  imgAddBtnFull: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 10,
+    ...Shadows.button,
+  },
+  imgAddBtnDim: { opacity: 0.6 },
+  imgAddBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

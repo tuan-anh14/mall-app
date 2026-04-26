@@ -492,7 +492,7 @@ const S = StyleSheet.create({
 
   // List
   list: {
-    paddingBottom: 32,
+    paddingBottom: 12,
     backgroundColor: Colors.bg,
   },
 });

@@ -51,24 +51,27 @@ function ReviewCard({
 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [imgError, setImgError] = useState(false);
+  const buyerName = `${review.user.firstName} ${review.user.lastName}`;
+  const productImage = review.product.images?.[0]?.url;
 
   return (
     <View style={RC.card}>
       {/* Reviewer */}
       <View style={RC.topRow}>
         <View style={RC.avatarWrap}>
-          {review.buyerAvatar ? (
-            <Image source={{ uri: review.buyerAvatar }} style={RC.avatar} />
+          {review.user.avatar ? (
+            <Image source={{ uri: review.user.avatar }} style={RC.avatar} />
           ) : (
             <View style={RC.avatarFallback}>
               <Text style={RC.avatarLetter}>
-                {review.buyerName?.[0]?.toUpperCase() ?? '?'}
+                {review.user.firstName?.[0]?.toUpperCase() ?? '?'}
               </Text>
             </View>
           )}
         </View>
         <View style={RC.userInfo}>
-          <Text style={RC.buyerName}>{review.buyerName}</Text>
+          <Text style={RC.buyerName}>{buyerName}</Text>
           <Stars rating={review.rating} />
         </View>
         <Text style={RC.date}>
@@ -76,7 +79,26 @@ function ReviewCard({
         </Text>
       </View>
 
-      <Text style={RC.productName}>Sản phẩm: {review.productName}</Text>
+      {/* Product Info */}
+      <View style={RC.productRow}>
+        <View style={RC.productImgWrap}>
+          {productImage && !imgError ? (
+            <Image
+              source={{ uri: productImage }}
+              style={RC.productImg}
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <View style={RC.productImgFallback}>
+              <Ionicons name="cube-outline" size={16} color={Colors.textMuted} />
+            </View>
+          )}
+        </View>
+        <Text style={RC.productName} numberOfLines={1}>
+          Sản phẩm: {review.product.name}
+        </Text>
+      </View>
+
       <Text style={RC.comment}>{review.comment}</Text>
 
       {/* Existing reply */}
@@ -329,7 +351,37 @@ const RC = StyleSheet.create({
   userInfo: { flex: 1, gap: 3 },
   buyerName: { fontSize: 13, fontWeight: '700', color: Colors.text },
   date: { fontSize: 11, color: Colors.textMuted },
-  productName: { fontSize: 12, color: Colors.textSub, fontStyle: 'italic' },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.bg,
+    padding: 8,
+    borderRadius: 10,
+  },
+  productImgWrap: {},
+  productImg: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: Colors.surface,
+  },
+  productImgFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  productName: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.text,
+  },
   comment: { fontSize: 14, color: Colors.text, lineHeight: 20 },
   replyBox: {
     backgroundColor: Colors.primaryLight,
