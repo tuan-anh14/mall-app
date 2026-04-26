@@ -76,7 +76,7 @@ export function BecomeSellerScreen() {
           </View>
           <Text style={styles.heroTitle}>Mở cửa hàng ngay hôm nay</Text>
           <Text style={styles.heroSubtitle}>
-            Tiếp cận hàng nghìn khách hàng và bắt đầu kinh doanh trực tuyến cùng MALL.
+            Tiếp cận hàng nghìn khách hàng và bắt đầu kinh doanh trực tuyến cùng ShopHub.
           </Text>
         </View>
 

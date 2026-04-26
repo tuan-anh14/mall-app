@@ -26,25 +26,25 @@ import type { OrderTrackingStep } from '@typings/order';
 // ─── Constants ────────────────────────────────────────
 
 type RouteT = RouteProp<RootStackParamList, 'OrderDetail'>;
-type Nav    = NativeStackNavigationProp<RootStackParamList>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  PENDING:           { label: 'Chờ xác nhận',    color: '#D97706', bg: '#FFFBEB' },
-  CONFIRMED:         { label: 'Đã xác nhận',      color: '#2563EB', bg: '#EFF6FF' },
-  PROCESSING:        { label: 'Đang xử lý',       color: '#7C3AED', bg: '#F5F3FF' },
-  SHIPPED:           { label: 'Đang vận chuyển',  color: Colors.primary, bg: Colors.primaryLight },
-  OUT_FOR_DELIVERY:  { label: 'Đang giao',        color: '#0891B2', bg: '#ECFEFF' },
-  DELIVERED:         { label: 'Đã giao',          color: Colors.success, bg: Colors.successLight },
-  CANCELLED:         { label: 'Đã hủy',           color: Colors.danger, bg: Colors.dangerLight },
-  REFUNDED:          { label: 'Đã hoàn tiền',     color: '#6B7280', bg: Colors.bg },
+  PENDING: { label: 'Chờ xác nhận', color: '#D97706', bg: '#FFFBEB' },
+  CONFIRMED: { label: 'Đã xác nhận', color: '#2563EB', bg: '#EFF6FF' },
+  PROCESSING: { label: 'Đang xử lý', color: '#7C3AED', bg: '#F5F3FF' },
+  SHIPPED: { label: 'Đang vận chuyển', color: Colors.primary, bg: Colors.primaryLight },
+  OUT_FOR_DELIVERY: { label: 'Đang giao', color: '#0891B2', bg: '#ECFEFF' },
+  DELIVERED: { label: 'Đã giao', color: Colors.success, bg: Colors.successLight },
+  CANCELLED: { label: 'Đã hủy', color: Colors.danger, bg: Colors.dangerLight },
+  REFUNDED: { label: 'Đã hoàn tiền', color: '#6B7280', bg: Colors.bg },
 };
 
 const PAY_LABELS: Record<string, string> = {
-  wallet: 'Ví MALL',
-  cod:    'Tiền mặt (COD)',
-  vnpay:  'VNPay',
-  momo:   'MoMo',
-  card:   'Thẻ ngân hàng',
+  wallet: 'Ví HUB',
+  cod: 'Tiền mặt (COD)',
+  vnpay: 'VNPay',
+  momo: 'MoMo',
+  card: 'Thẻ ngân hàng',
   paypal: 'PayPal',
 };
 
@@ -92,8 +92,8 @@ function Timeline({ steps }: { steps: OrderTrackingStep[] }) {
 }
 
 const TL = StyleSheet.create({
-  wrap:    { paddingLeft: 4 },
-  row:     { flexDirection: 'row', gap: 14, marginBottom: 0 },
+  wrap: { paddingLeft: 4 },
+  row: { flexDirection: 'row', gap: 14, marginBottom: 0 },
   connCol: { alignItems: 'center', width: 18 },
   dot: {
     width: 14, height: 14, borderRadius: 7,
@@ -101,33 +101,33 @@ const TL = StyleSheet.create({
     backgroundColor: Colors.surface,
     marginTop: 2,
   },
-  dotDone:    { borderColor: Colors.primary, backgroundColor: Colors.primary },
+  dotDone: { borderColor: Colors.primary, backgroundColor: Colors.primary },
   dotCurrent: { borderColor: Colors.primary, backgroundColor: Colors.primaryLight, borderWidth: 3 },
-  line:    { flex: 1, width: 2, backgroundColor: Colors.border, marginVertical: 4 },
+  line: { flex: 1, width: 2, backgroundColor: Colors.border, marginVertical: 4 },
   lineDone: { backgroundColor: Colors.primary },
   content: { flex: 1, paddingBottom: 20 },
-  label:   { fontSize: 13, fontWeight: '700', color: Colors.text },
+  label: { fontSize: 13, fontWeight: '700', color: Colors.text },
   labelPending: { color: Colors.textMuted, fontWeight: '500' },
-  desc:    { fontSize: 12, color: Colors.textSub, marginTop: 2 },
-  date:    { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  desc: { fontSize: 12, color: Colors.textSub, marginTop: 2 },
+  date: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 });
 
 // ─── Screen ───────────────────────────────────────────
 
 export function OrderDetailScreen() {
   const route = useRoute<RouteT>();
-  const nav   = useNavigation<Nav>();
-  const qc    = useQueryClient();
+  const nav = useNavigation<Nav>();
+  const qc = useQueryClient();
   const { orderId } = route.params;
 
   const { data, isLoading, isError } = useQuery({
     queryKey: QUERY_KEYS.order(orderId),
-    queryFn:  () => orderService.getOrderById(orderId),
+    queryFn: () => orderService.getOrderById(orderId),
   });
 
   const cancelMutation = useMutation({
     mutationFn: () => orderService.cancelOrder(orderId),
-    onSuccess:  () => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orders'] });
       qc.invalidateQueries({ queryKey: QUERY_KEYS.order(orderId) });
       Alert.alert('Đã hủy', 'Đơn hàng đã được hủy thành công');
@@ -307,8 +307,8 @@ export function OrderDetailScreen() {
 // ─── Styles ───────────────────────────────────────────
 
 const S = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: Colors.bg },
-  center:        { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   scrollContent: { padding: 12, gap: 10, paddingBottom: 40 },
 
   card: {
@@ -319,26 +319,26 @@ const S = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: '800', color: Colors.text, marginBottom: 12 },
 
   // Status
-  statusRow:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
-  statusText:  { fontSize: 13, fontWeight: '700' },
+  statusText: { fontSize: 13, fontWeight: '700' },
   estDelivery: { fontSize: 12, color: Colors.textSub },
 
   // Items
-  itemRow:   { flexDirection: 'row', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.border },
-  itemImg:   { width: 60, height: 60, borderRadius: 10, backgroundColor: '#F1F5F9', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  itemName:  { fontSize: 13, fontWeight: '600', color: Colors.text, lineHeight: 18 },
+  itemRow: { flexDirection: 'row', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.border },
+  itemImg: { width: 60, height: 60, borderRadius: 10, backgroundColor: '#F1F5F9', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  itemName: { fontSize: 13, fontWeight: '600', color: Colors.text, lineHeight: 18 },
   itemVariant: { fontSize: 11, color: Colors.textSub, marginTop: 2 },
-  itemQty:   { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  itemQty: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   itemPrice: { fontSize: 14, fontWeight: '700', color: Colors.primary, alignSelf: 'center' },
 
   // Pricing
-  priceRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
-  priceLabel:  { fontSize: 13, color: Colors.textSub },
-  priceValue:  { fontSize: 13, color: Colors.text, fontWeight: '600' },
-  totalRow:    { borderTopWidth: 1, borderTopColor: Colors.border, marginTop: 4, paddingTop: 10 },
-  totalLabel:  { fontSize: 14, fontWeight: '800', color: Colors.text },
-  totalValue:  { fontSize: 16, fontWeight: '900', color: Colors.primary },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
+  priceLabel: { fontSize: 13, color: Colors.textSub },
+  priceValue: { fontSize: 13, color: Colors.text, fontWeight: '600' },
+  totalRow: { borderTopWidth: 1, borderTopColor: Colors.border, marginTop: 4, paddingTop: 10 },
+  totalLabel: { fontSize: 14, fontWeight: '800', color: Colors.text },
+  totalValue: { fontSize: 16, fontWeight: '900', color: Colors.primary },
 
   // Address
   addrName: { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 4 },

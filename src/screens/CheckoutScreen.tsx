@@ -31,7 +31,7 @@ type PaymentMethod = 'wallet' | 'vnpay' | 'card' | 'cod';
 const PAYMENT_OPTIONS: { key: PaymentMethod; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; desc: string }[] = [
   {
     key: 'wallet',
-    label: 'Ví MALL',
+    label: 'Ví HUB',
     icon: 'wallet-outline',
     desc: 'Thanh toán bằng số dư ví',
   },
@@ -137,9 +137,9 @@ export function CheckoutScreen() {
       setItemCount(0);
       const orderId = res.order.id;
       if (res.paymentUrl) {
-        navigation.navigate('Payment', { 
-          paymentUrl: res.paymentUrl, 
-          orderId 
+        navigation.navigate('Payment', {
+          paymentUrl: res.paymentUrl,
+          orderId
         });
         return;
       }

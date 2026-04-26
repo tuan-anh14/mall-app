@@ -63,98 +63,98 @@ export function RegisterScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-          <ScreenHeader onBack={() => navigation.goBack()} />
+        <ScreenHeader onBack={() => navigation.goBack()} />
 
-          {/* Brand */}
-          <View style={styles.brand}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>M</Text>
-            </View>
-            <Text style={styles.appName}>MALL</Text>
+        {/* Brand */}
+        <View style={styles.brand}>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>H</Text>
           </View>
+          <Text style={styles.appName}>HUB</Text>
+        </View>
 
-          {/* Card */}
-          <View style={styles.card}>
-            <Text style={styles.title}>Tạo tài khoản</Text>
-            <Text style={styles.subtitle}>Bắt đầu mua sắm cùng MALL</Text>
+        {/* Card */}
+        <View style={styles.card}>
+          <Text style={styles.title}>Tạo tài khoản</Text>
+          <Text style={styles.subtitle}>Bắt đầu mua sắm cùng HUB</Text>
 
-            <View style={styles.form}>
-              <Input
-                label="Họ và tên"
-                placeholder="Nguyễn Văn A"
-                value={name}
-                onChangeText={(v) => {
-                  setName(v);
-                  if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
-                }}
-                autoCapitalize="words"
-                error={errors.name}
-                leftIcon={<IonIconGlyph name="person-outline" />}
-              />
-
-              <Input
-                label="Email"
-                placeholder="ban@example.com"
-                value={email}
-                onChangeText={(v) => {
-                  setEmail(v);
-                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
-                }}
-                keyboardType="email-address"
-                error={errors.email}
-                leftIcon={<IonIconGlyph name="mail-outline" />}
-              />
-
-              <Input
-                label="Mật khẩu"
-                placeholder="Tối thiểu 6 ký tự"
-                value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  if (errors.password)
-                    setErrors((e) => ({ ...e, password: undefined }));
-                }}
-                secureTextEntry={!showPassword}
-                error={errors.password}
-                leftIcon={<IonIconGlyph name="lock-closed-outline" />}
-                rightIcon={
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#6B7280"
-                  />
-                }
-                onRightIconPress={() => setShowPassword((v) => !v)}
-              />
-            </View>
-
-            {register.isError && (
-              <View style={styles.errorBanner}>
-                <Text style={styles.errorBannerText}>
-                  {getApiErrorMessage(register.error, 'Đăng ký thất bại. Vui lòng thử lại.')}
-                </Text>
-              </View>
-            )}
-
-            <Button
-              label="Đăng ký"
-              onPress={handleRegister}
-              loading={register.isPending}
-              style={styles.ctaBtn}
+          <View style={styles.form}>
+            <Input
+              label="Họ và tên"
+              placeholder="Nguyễn Văn A"
+              value={name}
+              onChangeText={(v) => {
+                setName(v);
+                if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+              }}
+              autoCapitalize="words"
+              error={errors.name}
+              leftIcon={<IonIconGlyph name="person-outline" />}
             />
 
-            <Text style={styles.terms}>
-              Bằng cách đăng ký, bạn đồng ý với{' '}
-              <Text style={styles.termsLink}>Điều khoản dịch vụ</Text> của chúng tôi.
-            </Text>
+            <Input
+              label="Email"
+              placeholder="ban@example.com"
+              value={email}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+              }}
+              keyboardType="email-address"
+              error={errors.email}
+              leftIcon={<IonIconGlyph name="mail-outline" />}
+            />
 
-            <View style={styles.loginRow}>
-              <Text style={styles.loginHint}>Đã có tài khoản? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.loginLink}>Đăng nhập</Text>
-              </TouchableOpacity>
-            </View>
+            <Input
+              label="Mật khẩu"
+              placeholder="Tối thiểu 6 ký tự"
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                if (errors.password)
+                  setErrors((e) => ({ ...e, password: undefined }));
+              }}
+              secureTextEntry={!showPassword}
+              error={errors.password}
+              leftIcon={<IonIconGlyph name="lock-closed-outline" />}
+              rightIcon={
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
+              }
+              onRightIconPress={() => setShowPassword((v) => !v)}
+            />
           </View>
+
+          {register.isError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>
+                {getApiErrorMessage(register.error, 'Đăng ký thất bại. Vui lòng thử lại.')}
+              </Text>
+            </View>
+          )}
+
+          <Button
+            label="Đăng ký"
+            onPress={handleRegister}
+            loading={register.isPending}
+            style={styles.ctaBtn}
+          />
+
+          <Text style={styles.terms}>
+            Bằng cách đăng ký, bạn đồng ý với{' '}
+            <Text style={styles.termsLink}>Điều khoản dịch vụ</Text> của chúng tôi.
+          </Text>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.loginHint}>Đã có tài khoản? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.loginLink}>Đăng nhập</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

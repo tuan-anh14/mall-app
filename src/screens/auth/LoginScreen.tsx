@@ -52,120 +52,120 @@ export function LoginScreen() {
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
-          {/* Brand */}
-          <View style={styles.brand}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>M</Text>
-            </View>
-            <Text style={styles.appName}>MALL</Text>
-            <Text style={styles.tagline}>Mua sắm thông minh</Text>
+        {/* Brand */}
+        <View style={styles.brand}>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>H</Text>
           </View>
+          <Text style={styles.appName}>ShopHub</Text>
+          <Text style={styles.tagline}>Mua sắm thông minh</Text>
+        </View>
 
-          {/* Card */}
-          <View style={styles.card}>
-            <Text style={styles.title}>Chào mừng trở lại</Text>
-            <Text style={styles.subtitle}>Đăng nhập vào tài khoản của bạn</Text>
+        {/* Card */}
+        <View style={styles.card}>
+          <Text style={styles.title}>Chào mừng trở lại</Text>
+          <Text style={styles.subtitle}>Đăng nhập vào tài khoản của bạn</Text>
 
-            <View style={styles.form}>
-              <Input
-                label="Email"
-                placeholder="ban@example.com"
-                value={email}
-                onChangeText={(v) => {
-                  setEmail(v);
-                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
-                }}
-                keyboardType="email-address"
-                error={errors.email}
-                leftIcon={<IonIconGlyph name="mail-outline" />}
-              />
-
-              <Input
-                label="Mật khẩu"
-                placeholder="Nhập mật khẩu"
-                value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  if (errors.password)
-                    setErrors((e) => ({ ...e, password: undefined }));
-                }}
-                secureTextEntry={!showPassword}
-                error={errors.password}
-                leftIcon={<IonIconGlyph name="lock-closed-outline" />}
-                rightIcon={
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#6B7280"
-                  />
-                }
-                onRightIconPress={() => setShowPassword((v) => !v)}
-              />
-
-              <TouchableOpacity
-                onPress={() => navigation.navigate('ForgotPassword')}
-                style={styles.forgotRow}
-              >
-                <Text style={styles.forgotText}>Quên mật khẩu?</Text>
-              </TouchableOpacity>
-            </View>
-
-            {login.isError && (
-              <View style={styles.errorBanner}>
-                <Text style={styles.errorBannerText}>
-                  {getApiErrorMessage(login.error, 'Đăng nhập thất bại. Vui lòng thử lại.')}
-                </Text>
-              </View>
-            )}
-
-            <Button
-              label="Đăng nhập"
-              onPress={handleLogin}
-              loading={login.isPending}
-              style={styles.ctaBtn}
+          <View style={styles.form}>
+            <Input
+              label="Email"
+              placeholder="ban@example.com"
+              value={email}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+              }}
+              keyboardType="email-address"
+              error={errors.email}
+              leftIcon={<IonIconGlyph name="mail-outline" />}
             />
 
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>hoặc đăng nhập bằng</Text>
-              <View style={styles.dividerLine} />
-            </View>
+            <Input
+              label="Mật khẩu"
+              placeholder="Nhập mật khẩu"
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                if (errors.password)
+                  setErrors((e) => ({ ...e, password: undefined }));
+              }}
+              secureTextEntry={!showPassword}
+              error={errors.password}
+              leftIcon={<IonIconGlyph name="lock-closed-outline" />}
+              rightIcon={
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
+              }
+              onRightIconPress={() => setShowPassword((v) => !v)}
+            />
 
-            {/* OAuth Buttons */}
-            <View style={styles.oauthRow}>
-              <TouchableOpacity
-                style={styles.oauthBtn}
-                onPress={() => {
-                  // Google OAuth: open browser with /api/v1/auth/google
-                  Alert.alert('Google', 'Đang mở đăng nhập Google...');
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={styles.oauthIconWrap}>
-                  <Text style={styles.oauthIconText}>G</Text>
-                </View>
-                <Text style={styles.oauthBtnText}>Google</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.oauthBtn}
-                onPress={() => {
-                  Alert.alert('GitHub', 'Đang mở đăng nhập GitHub...');
-                }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="logo-github" size={20} color="#1F2937" />
-                <Text style={styles.oauthBtnText}>GitHub</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.registerRow}>
-              <Text style={styles.registerHint}>Chưa có tài khoản? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.registerLink}>Đăng ký ngay</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ForgotPassword')}
+              style={styles.forgotRow}
+            >
+              <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+            </TouchableOpacity>
           </View>
+
+          {login.isError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>
+                {getApiErrorMessage(login.error, 'Đăng nhập thất bại. Vui lòng thử lại.')}
+              </Text>
+            </View>
+          )}
+
+          <Button
+            label="Đăng nhập"
+            onPress={handleLogin}
+            loading={login.isPending}
+            style={styles.ctaBtn}
+          />
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>hoặc đăng nhập bằng</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* OAuth Buttons */}
+          <View style={styles.oauthRow}>
+            <TouchableOpacity
+              style={styles.oauthBtn}
+              onPress={() => {
+                // Google OAuth: open browser with /api/v1/auth/google
+                Alert.alert('Google', 'Đang mở đăng nhập Google...');
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.oauthIconWrap}>
+                <Text style={styles.oauthIconText}>G</Text>
+              </View>
+              <Text style={styles.oauthBtnText}>Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.oauthBtn}
+              onPress={() => {
+                Alert.alert('GitHub', 'Đang mở đăng nhập GitHub...');
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-github" size={20} color="#1F2937" />
+              <Text style={styles.oauthBtnText}>GitHub</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.registerRow}>
+            <Text style={styles.registerHint}>Chưa có tài khoản? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.registerLink}>Đăng ký ngay</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

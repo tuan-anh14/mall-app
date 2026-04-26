@@ -40,23 +40,23 @@ const FREE_SHIPPING_FROM_VND = 50_000;
 // ─── Layout constants ─────────────────────────────────
 
 const { width: W } = Dimensions.get('window');
-const CARD_MX  = 12;   // card horizontal margin
-const H_PAD    = 16;   // padding inside cards
-const GAP      = 12;   // grid gap
-const INNER_W  = W - CARD_MX * 2 - H_PAD * 2;
-const CARD_W   = (INNER_W - GAP) / 2;
-const PROMO_W  = INNER_W;
+const CARD_MX = 12;   // card horizontal margin
+const H_PAD = 16;   // padding inside cards
+const GAP = 12;   // grid gap
+const INNER_W = W - CARD_MX * 2 - H_PAD * 2;
+const CARD_W = (INNER_W - GAP) / 2;
+const PROMO_W = INNER_W;
 
 const C = Colors;
 
-const POPUP_KEY   = 'promo_popup_last_date';
+const POPUP_KEY = 'promo_popup_last_date';
 const CAROUSEL_MS = 5000;
 
 const TRUST_BADGES = [
-  { icon: 'car-outline'                as const, label: 'Miễn phí vận chuyển' },
-  { icon: 'shield-checkmark-outline'   as const, label: 'Thanh toán an toàn'  },
-  { icon: 'flash-outline'              as const, label: 'Giao hàng nhanh'     },
-  { icon: 'headset-outline'            as const, label: 'Hỗ trợ 24/7'         },
+  { icon: 'car-outline' as const, label: 'Miễn phí vận chuyển' },
+  { icon: 'shield-checkmark-outline' as const, label: 'Thanh toán an toàn' },
+  { icon: 'flash-outline' as const, label: 'Giao hàng nhanh' },
+  { icon: 'headset-outline' as const, label: 'Hỗ trợ 24/7' },
 ];
 
 const PROMO_THEMES = [
@@ -150,10 +150,10 @@ function SectionHeader({
 const CAROUSEL_H = 200;
 
 function HeroCarousel({ products, onPress }: { products: Product[]; onPress: (id: string) => void }) {
-  const flatRef   = useRef<FlatList>(null);
+  const flatRef = useRef<FlatList>(null);
   const [idx, setIdx] = useState(0);
-  const idxRef    = useRef(0);
-  const slides    = products.filter((p) => p.image);
+  const idxRef = useRef(0);
+  const slides = products.filter((p) => p.image);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -227,7 +227,7 @@ function HeroBanner({ firstName }: { firstName?: string }) {
       <View style={S.heroCircle2} />
       <View style={{ flex: 1, gap: 6, zIndex: 1 }}>
         <Text style={S.heroTitle}>
-          {firstName ? `Xin chào, ${firstName}!` : 'Chào mừng đến MALL!'}
+          {firstName ? `Xin chào, ${firstName}!` : 'Chào mừng đến ShopHub!'}
         </Text>
         <Text style={S.heroSub}>Hàng ngàn sản phẩm từ các thương hiệu uy tín.</Text>
         <View style={S.heroBadge}>
@@ -272,7 +272,7 @@ function CategoryCard({
 }: { cat: Category; selected: boolean; onPress: () => void }) {
   const ion = resolveCategoryIonIcon(cat.icon, cat.slug);
   const iconColor = selected ? C.primary : C.textSub;
-  
+
   return (
     <TouchableOpacity
       style={[S.catCard, selected && S.catCardActive]}
@@ -280,9 +280,9 @@ function CategoryCard({
     >
       <View style={[S.catIconWrap, selected && S.catIconWrapActive]}>
         {cat.image ? (
-          <Image 
-            source={{ uri: cat.image }} 
-            style={S.catImage} 
+          <Image
+            source={{ uri: cat.image }}
+            style={S.catImage}
             resizeMode="cover"
           />
         ) : (
@@ -344,7 +344,7 @@ function ProductGrid({ products, onPress, wishlistedIds, onWishlist }: ProductGr
 function PromoBannerCard({
   promo, index, onShop,
 }: { promo: Promotion; index: number; onShop: () => void }) {
-  const bg   = PROMO_THEMES[index % PROMO_THEMES.length].bg;
+  const bg = PROMO_THEMES[index % PROMO_THEMES.length].bg;
   const isPct = promo.type === 'PERCENTAGE';
   const label = isPct
     ? `${promo.value}%`
@@ -393,9 +393,9 @@ function PromoBannerCard({
 // ─── Promo Section (auto-scroll) ──────────────────────
 
 function PromoSection({ promotions, onShop }: { promotions: Promotion[]; onShop: () => void }) {
-  const flatRef   = useRef<FlatList>(null);
+  const flatRef = useRef<FlatList>(null);
   const [idx, setIdx] = useState(0);
-  const idxRef    = useRef(0);
+  const idxRef = useRef(0);
 
   useEffect(() => {
     if (promotions.length <= 1) return;
@@ -459,7 +459,7 @@ function EmptyState({ icon, title, sub }: { icon: IonName; title: string; sub?: 
 function PromoPopup({ promo, onClose, onShop }: {
   promo: Promotion; onClose: () => void; onShop: () => void;
 }) {
-  const isPct  = promo.type === 'PERCENTAGE';
+  const isPct = promo.type === 'PERCENTAGE';
   const label = isPct
     ? `${promo.value}% OFF`
     : `${formatVnd(Number(promo.value))} OFF`;
@@ -528,10 +528,10 @@ export function HomeScreen() {
     NativeStackNavigationProp<RootStackParamList>
   >>();
 
-  const [search, setSearch]             = useState('');
+  const [search, setSearch] = useState('');
   const [debouncedSearch, setDebounced] = useState('');
-  const [selectedCat, setSelectedCat]   = useState<string | null>(null);
-  const [refreshing, setRefreshing]     = useState(false);
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [popupVisible, setPopupVisible] = useState(false);
 
   // debounce search
@@ -592,11 +592,11 @@ export function HomeScreen() {
   useEffect(() => {
     async function checkPopup() {
       if (!promotions?.length) return;
-      const today  = new Date().toISOString().slice(0, 10);
+      const today = new Date().toISOString().slice(0, 10);
       const stored = await SecureStore.getItemAsync(POPUP_KEY).catch(() => null);
       if (stored !== today) {
         setPopupVisible(true);
-        await SecureStore.setItemAsync(POPUP_KEY, today).catch(() => {});
+        await SecureStore.setItemAsync(POPUP_KEY, today).catch(() => { });
       }
     }
     checkPopup();
@@ -621,9 +621,9 @@ export function HomeScreen() {
   function goToSearch() { nav.navigate('Search'); }
   function goToProduct(id: string) { nav.navigate('ProductDetail', { productId: id }); }
 
-  const firstName    = user?.name?.split(' ')[0];
+  const firstName = user?.name?.split(' ')[0];
   const featuredList = featuredData?.products ?? [];
-  const hasCarousel  = featuredList.some((p) => p.image);
+  const hasCarousel = featuredList.some((p) => p.image);
 
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
@@ -869,46 +869,46 @@ export function HomeScreen() {
 
             {/* ── 8. TIN TỨC & BLOG ────────────────────── */}
             <View style={S.card}>
-               <View style={S.secRowPad}>
-                  <SectionHeader
-                    icon="book-outline"
-                    title="Tin tức & Blog"
-                    onMore={() => nav.navigate('Blog')}
-                  />
-                </View>
-                {blogLoading ? (
-                  <ScrollView
-                    horizontal showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={[S.recoScroll, { gap: 12 }]}
-                  >
-                    {[0, 1].map((i) => <Bone key={i} w={W * 0.7} h={120} r={16} />)}
-                  </ScrollView>
-                ) : blogs.length > 0 ? (
-                  <ScrollView
-                    horizontal showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={S.recoScroll}
-                  >
-                    {blogs.map((b: Blog) => (
-                      <TouchableOpacity
-                        key={b.id}
-                        style={S.blogMiniCard}
-                        onPress={() => nav.navigate('BlogDetail', { slug: b.slug })}
-                        activeOpacity={0.8}
-                      >
-                        <Image
-                          source={b.thumbnail ? { uri: b.thumbnail } : require('@assets/adaptive-icon.png')}
-                          style={S.blogMiniThumb}
-                        />
-                        <View style={S.blogMiniInfo}>
-                          <Text style={S.blogMiniTitle} numberOfLines={2}>{b.title}</Text>
-                          <Text style={S.blogMiniDate}>
-                            {new Date(b.createdAt).toLocaleDateString('vi-VN')}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                ) : null}
+              <View style={S.secRowPad}>
+                <SectionHeader
+                  icon="book-outline"
+                  title="Tin tức & Blog"
+                  onMore={() => nav.navigate('Blog')}
+                />
+              </View>
+              {blogLoading ? (
+                <ScrollView
+                  horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={[S.recoScroll, { gap: 12 }]}
+                >
+                  {[0, 1].map((i) => <Bone key={i} w={W * 0.7} h={120} r={16} />)}
+                </ScrollView>
+              ) : blogs.length > 0 ? (
+                <ScrollView
+                  horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={S.recoScroll}
+                >
+                  {blogs.map((b: Blog) => (
+                    <TouchableOpacity
+                      key={b.id}
+                      style={S.blogMiniCard}
+                      onPress={() => nav.navigate('BlogDetail', { slug: b.slug })}
+                      activeOpacity={0.8}
+                    >
+                      <Image
+                        source={b.thumbnail ? { uri: b.thumbnail } : require('@assets/adaptive-icon.png')}
+                        style={S.blogMiniThumb}
+                      />
+                      <View style={S.blogMiniInfo}>
+                        <Text style={S.blogMiniTitle} numberOfLines={2}>{b.title}</Text>
+                        <Text style={S.blogMiniDate}>
+                          {new Date(b.createdAt).toLocaleDateString('vi-VN')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : null}
             </View>
 
             {/* ── 9. XU HƯỚNG HIỆN TẠI ─────────────────── */}
@@ -953,7 +953,7 @@ const CARD_SHADOW = {
 };
 
 const S = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1, backgroundColor: C.bg },
   scrollContent: { paddingBottom: 0 },
 
   // ── HEADER ────────────────────────────────────────────
@@ -970,23 +970,23 @@ const S = StyleSheet.create({
     zIndex: 10,
   },
 
-  hRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  hRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
   logoMark: {
     width: 42, height: 42, borderRadius: 13,
     backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
     shadowColor: C.primary, shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
-  logoText:  { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.5, includeFontPadding: false },
+  logoText: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.5, includeFontPadding: false },
   avatarImage: {
     width: '100%',
     height: '100%',
     borderRadius: 13,
   },
   greetName: { fontSize: 14, fontWeight: '700', color: C.text, includeFontPadding: false },
-  greetSub:  { fontSize: 11, color: C.textMuted, includeFontPadding: false },
+  greetSub: { fontSize: 11, color: C.textMuted, includeFontPadding: false },
 
-  hActions:  { flexDirection: 'row', gap: 8 },
+  hActions: { flexDirection: 'row', gap: 8 },
   hIconBtn: {
     width: 38, height: 38, borderRadius: 11,
     backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.border,
@@ -1004,9 +1004,9 @@ const S = StyleSheet.create({
     paddingLeft: 12, paddingRight: 6, paddingVertical: 10,
     gap: 8, borderWidth: 1, borderColor: C.border,
   },
-  searchInput:  { flex: 1, fontSize: 13, color: C.text, padding: 0 },
-  filterSep:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  filterLine:   { width: 1, height: 14, backgroundColor: C.border },
+  searchInput: { flex: 1, fontSize: 13, color: C.text, padding: 0 },
+  filterSep: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  filterLine: { width: 1, height: 14, backgroundColor: C.border },
   filterBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 7,
@@ -1050,13 +1050,13 @@ const S = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  secLeft:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  secLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   secIconBox: {
     width: 28, height: 28, borderRadius: 8,
     backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
-  secTitle:   { fontSize: 15, fontWeight: '800', color: C.text, letterSpacing: -0.2 },
-  secCount:   { fontSize: 10, color: C.textMuted },
+  secTitle: { fontSize: 15, fontWeight: '800', color: C.text, letterSpacing: -0.2 },
+  secCount: { fontSize: 10, color: C.textMuted },
   secMoreBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   secMoreText: { fontSize: 12, fontWeight: '600', color: C.primary },
 
@@ -1080,8 +1080,8 @@ const S = StyleSheet.create({
     paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5, marginBottom: 3,
   },
   slidePillText: { fontSize: 10, fontWeight: '800', color: '#FFF' },
-  slideName:     { fontSize: 14, fontWeight: '700', color: '#FFF', lineHeight: 20 },
-  slidePrice:    { fontSize: 15, fontWeight: '900', color: '#FFF' },
+  slideName: { fontSize: 14, fontWeight: '700', color: '#FFF', lineHeight: 20 },
+  slidePrice: { fontSize: 15, fontWeight: '900', color: '#FFF' },
 
   // ── DOTS ──────────────────────────────────────────────
 
@@ -1089,7 +1089,7 @@ const S = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'center',
     alignItems: 'center', gap: 5, paddingVertical: 8,
   },
-  dot:       { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#D1D5DB' },
+  dot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#D1D5DB' },
   dotActive: { width: 18, height: 5, borderRadius: 2.5, backgroundColor: C.primary },
 
   // ── HERO BANNER (fallback) ─────────────────────────────
@@ -1101,8 +1101,8 @@ const S = StyleSheet.create({
   },
   heroCircle1: { position: 'absolute', width: 130, height: 130, borderRadius: 65, right: -20, top: -35, backgroundColor: 'rgba(26,86,219,0.06)' },
   heroCircle2: { position: 'absolute', width: 70, height: 70, borderRadius: 35, left: -10, bottom: -20, backgroundColor: 'rgba(26,86,219,0.05)' },
-  heroTitle:   { fontSize: 14, fontWeight: '800', color: C.text, lineHeight: 20 },
-  heroSub:     { fontSize: 12, color: C.textSub, lineHeight: 18 },
+  heroTitle: { fontSize: 14, fontWeight: '800', color: C.text, lineHeight: 20 },
+  heroSub: { fontSize: 12, color: C.textSub, lineHeight: 18 },
   heroBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     alignSelf: 'flex-start', backgroundColor: '#DBEAFE',
@@ -1150,7 +1150,7 @@ const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-   catIconWrapActive: {
+  catIconWrapActive: {
     backgroundColor: '#FFF',
     borderColor: '#93C5FD',
   },
@@ -1159,9 +1159,9 @@ const S = StyleSheet.create({
     height: '100%',
     borderRadius: 10,
   },
-  catName:       { fontSize: 10, fontWeight: '600', color: C.textSub, textAlign: 'center' },
+  catName: { fontSize: 10, fontWeight: '600', color: C.textSub, textAlign: 'center' },
   catNameActive: { color: C.primary },
-  catCount:      { fontSize: 10, color: C.textMuted },
+  catCount: { fontSize: 10, color: C.textMuted },
   catCountActive: { color: C.primary, fontWeight: '600' },
 
   // ── BLOG MINI CARD ────────────────────────────────────
@@ -1208,9 +1208,9 @@ const S = StyleSheet.create({
     borderRadius: 20, backgroundColor: C.inputBg,
     borderWidth: 1, borderColor: C.border,
   },
-  chipActive:     { backgroundColor: C.primaryLight, borderColor: C.primary },
-  chipLabel:      { fontSize: 12, fontWeight: '500', color: C.textSub },
-  chipLabelActive:{ color: C.primary, fontWeight: '700' },
+  chipActive: { backgroundColor: C.primaryLight, borderColor: C.primary },
+  chipLabel: { fontSize: 12, fontWeight: '500', color: C.textSub },
+  chipLabelActive: { color: C.primary, fontWeight: '700' },
 
   // ── PROMO BANNER ──────────────────────────────────────
 
@@ -1228,8 +1228,8 @@ const S = StyleSheet.create({
     alignSelf: 'flex-start', backgroundColor: '#FFF',
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
   },
-  promoCode:   { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  promoDesc:   { fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 17 },
+  promoCode: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+  promoDesc: { fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 17 },
   promoExpiry: { fontSize: 10, color: 'rgba(255,255,255,0.6)' },
   promoBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -1237,9 +1237,9 @@ const S = StyleSheet.create({
     backgroundColor: '#FFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7,
   },
   promoBtnText: { fontSize: 11, fontWeight: '800' },
-  promoAside:  { alignItems: 'center', zIndex: 1, minWidth: 56 },
-  promoValue:  { fontSize: 30, fontWeight: '900', color: '#FFF', lineHeight: 34, letterSpacing: -1 },
-  promoOff:    { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: 3 },
+  promoAside: { alignItems: 'center', zIndex: 1, minWidth: 56 },
+  promoValue: { fontSize: 30, fontWeight: '900', color: '#FFF', lineHeight: 34, letterSpacing: -1 },
+  promoOff: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: 3 },
 
   // ── RECO SCROLL ───────────────────────────────────────
 
@@ -1249,10 +1249,10 @@ const S = StyleSheet.create({
 
   // ── EMPTY ─────────────────────────────────────────────
 
-  empty:     { alignItems: 'center', paddingVertical: 32, gap: 10 },
-  emptyBox:  { width: 56, height: 56, borderRadius: 16, backgroundColor: C.inputBg, alignItems: 'center', justifyContent: 'center' },
-  emptyTitle:{ fontSize: 13, fontWeight: '700', color: C.text },
-  emptySub:  { fontSize: 12, color: C.textMuted, textAlign: 'center', lineHeight: 18, paddingHorizontal: 20 },
+  empty: { alignItems: 'center', paddingVertical: 32, gap: 10 },
+  emptyBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: C.inputBg, alignItems: 'center', justifyContent: 'center' },
+  emptyTitle: { fontSize: 13, fontWeight: '700', color: C.text },
+  emptySub: { fontSize: 12, color: C.textMuted, textAlign: 'center', lineHeight: 18, paddingHorizontal: 20 },
 });
 
 // ── Popup Styles ──────────────────────────────────────
@@ -1280,16 +1280,16 @@ const PP = StyleSheet.create({
     shadowColor: C.primary, shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.32, shadowRadius: 10, elevation: 7,
   },
-  heading:  { fontSize: 17, fontWeight: '800', color: C.text },
+  heading: { fontSize: 17, fontWeight: '800', color: C.text },
   discount: { fontSize: 32, fontWeight: '900', color: C.primary, letterSpacing: -0.5, lineHeight: 38 },
-  desc:     { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 19 },
+  desc: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 19 },
   codePill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: C.primaryLight, borderWidth: 1, borderColor: '#BFDBFE',
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9, marginTop: 4,
   },
-  code:     { fontSize: 15, fontWeight: '900', color: C.primary, letterSpacing: 1.5 },
-  meta:     { alignItems: 'center', gap: 2, marginTop: 2 },
+  code: { fontSize: 15, fontWeight: '900', color: C.primary, letterSpacing: 1.5 },
+  meta: { alignItems: 'center', gap: 2, marginTop: 2 },
   metaText: { fontSize: 11, color: C.textMuted },
   cta: {
     width: '100%', backgroundColor: C.primary,
@@ -1298,5 +1298,5 @@ const PP = StyleSheet.create({
     shadowOpacity: 0.28, shadowRadius: 8, elevation: 5,
   },
   ctaText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
-  skip:    { fontSize: 12, color: C.textMuted, textDecorationLine: 'underline' },
+  skip: { fontSize: 12, color: C.textMuted, textDecorationLine: 'underline' },
 });
