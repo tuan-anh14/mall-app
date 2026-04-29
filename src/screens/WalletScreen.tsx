@@ -21,8 +21,10 @@ import { Colors, Shadows } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import { walletService } from '@services/walletService';
 import { formatVnd } from '@utils/index';
+import { MOBILE_RETURN_URL } from './PaymentScreen';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import type { RootStackParamList } from '@app/navigation/types';
+import { useAuth } from '@hooks/useAuth';
 import type { WalletTransaction, WalletTransactionType } from '@typings/wallet';
 
 // ─── Constants ────────────────────────────────────────
@@ -36,10 +38,16 @@ const TX_CONFIG: Record<WalletTransactionType, { label: string; icon: string; co
   REFUND:              { label: 'Hoàn tiền đơn',   icon: 'refresh-circle-outline',    color: Colors.success, sign: '+' },
   SELLER_INCOME:       { label: 'Doanh thu',       icon: 'trending-up-outline',       color: Colors.success, sign: '+' },
   SELLER_FEE_DEDUCTED: { label: 'Phí dịch vụ',     icon: 'remove-circle-outline',     color: Colors.danger,  sign: '-' },
+  SELLER_REFUND_DEDUCTED: { label: 'Hoàn tiền khách', icon: 'backspace-outline',         color: Colors.danger,  sign: '-' },
   ADJUSTMENT:          { label: 'Điều chỉnh',       icon: 'options-outline',           color: Colors.textSub, sign: '+' },
 };
 
 const QUICK_AMOUNTS = [50_000, 100_000, 200_000, 500_000];
+
+const DEPOSIT_GATEWAYS: { key: string; label: string; icon: any; desc: string }[] = [
+  { key: 'VNPAY', label: 'VNPAY', icon: 'qr-code-outline', desc: 'ATM / Internet Banking / QR Code' },
+  { key: 'CARD',  label: 'Thẻ quốc tế', icon: 'card-outline',  desc: 'Visa, Mastercard, JCB' },
+];
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('vi-VN', {
@@ -86,12 +94,13 @@ function TxRow({ tx }: { tx: WalletTransaction }) {
 interface DepositModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (amount: number) => void;
+  onSubmit: (amount: number, gateway: string) => void;
   loading: boolean;
 }
 
 function DepositModal({ visible, onClose, onSubmit, loading }: DepositModalProps) {
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount]   = useState('');
+  const [gateway, setGateway] = useState('VNPAY');
 
   function handleSubmit() {
     const val = Number(amount.replace(/\D/g, ''));
@@ -99,7 +108,7 @@ function DepositModal({ visible, onClose, onSubmit, loading }: DepositModalProps
       Alert.alert('Lỗi', 'Số tiền nạp tối thiểu là 10.000đ');
       return;
     }
-    onSubmit(val);
+    onSubmit(val, gateway);
   }
 
   return (
@@ -134,6 +143,29 @@ function DepositModal({ visible, onClose, onSubmit, loading }: DepositModalProps
                 <Text style={[S.quickBtnText, amount === String(a) && S.quickBtnTextActive]}>
                   {a >= 1_000_000 ? `${a / 1_000_000}M` : `${a / 1_000}K`}
                 </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={[S.fieldLabel, { marginTop: 16, marginBottom: 8 }]}>Phương thức thanh toán</Text>
+          <View style={{ gap: 10, marginBottom: 20 }}>
+            {DEPOSIT_GATEWAYS.map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                style={[S.gatewayBtn, gateway === opt.key && S.gatewayBtnActive]}
+                onPress={() => setGateway(opt.key)}
+                activeOpacity={0.8}
+              >
+                <View style={S.gatewayIconWrap}>
+                  <Ionicons name={opt.icon} size={20} color={gateway === opt.key ? Colors.primary : Colors.textSub} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[S.gatewayLabel, gateway === opt.key && S.gatewayLabelActive]}>{opt.label}</Text>
+                  <Text style={S.gatewayDesc}>{opt.desc}</Text>
+                </View>
+                <View style={[S.radioOuter, gateway === opt.key && S.radioOuterActive]}>
+                  {gateway === opt.key && <View style={S.radioInner} />}
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -228,6 +260,7 @@ function WithdrawModal({ visible, onClose, onSubmit, loading }: WithdrawModalPro
 // ─── Screen ───────────────────────────────────────────
 
 export function WalletScreen() {
+  const { user } = useAuth();
   const nav = useNavigation<Nav>();
   const qc  = useQueryClient();
 
@@ -251,16 +284,20 @@ export function WalletScreen() {
   });
 
   const depositMutation = useMutation({
-    mutationFn: (amount: number) =>
-      walletService.createDeposit({ amount, gateway: 'VNPAY' }),
+    mutationFn: ({ amount, gateway }: { amount: number; gateway: string }) =>
+      walletService.createDeposit({ 
+        amount, 
+        gateway: gateway as any,
+        returnUrl: MOBILE_RETURN_URL 
+      }),
     onSuccess: (res) => {
       setDepositVisible(false);
-      Alert.alert(
-        'Chuyển đến thanh toán',
-        'Bạn sẽ được chuyển đến trang thanh toán VNPay.',
-        [{ text: 'OK' }],
-      );
-      // In a real app: open res.paymentUrl via Linking.openURL
+      if (res.paymentUrl) {
+        nav.navigate('Payment', {
+          paymentUrl: res.paymentUrl,
+          orderId: 'DEPOSIT-' + Date.now(),
+        });
+      }
     },
     onError: () => Alert.alert('Lỗi', 'Không thể tạo giao dịch nạp tiền'),
   });
@@ -307,20 +344,29 @@ export function WalletScreen() {
         </View>
 
         {/* ── Stats ── */}
-        {stats && (
-          <View style={S.statsCard}>
-            {[
-              { label: 'Đã chi tiêu',   value: stats.totalSpent,     color: Colors.danger  },
-              { label: 'Đã rút',        value: stats.totalWithdrawn,  color: Colors.textSub },
-              { label: 'Hoàn tiền',     value: stats.totalRefunded,   color: Colors.success },
-            ].map((s) => (
-              <View key={s.label} style={S.statItem}>
-                <Text style={[S.statValue, { color: s.color }]}>{formatVnd(s.value)}</Text>
-                <Text style={S.statLabel}>{s.label}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {stats && (() => {
+          const isSeller = user?.userType?.toLowerCase() === 'seller';
+          const statsList = [
+            ...(isSeller ? [
+              { label: 'Tổng thu', value: stats.totalIncome, color: Colors.success },
+              { label: 'Phí sàn', value: stats.totalFees, color: Colors.primary },
+            ] : []),
+            { label: 'Đã nạp', value: stats.totalDeposited, color: Colors.success },
+            { label: 'Đã chi', value: stats.totalSpent, color: Colors.danger },
+            { label: 'Đã rút', value: stats.totalWithdrawn, color: Colors.textSub },
+          ];
+
+          return (
+            <View style={[S.statsCard, { flexWrap: 'wrap', justifyContent: 'center' }]}>
+              {statsList.map((s) => (
+                <View key={s.label} style={[S.statItem, { width: isSeller ? '30%' : '31%', marginBottom: 12 }]}>
+                  <Text style={[S.statValue, { color: s.color, fontSize: isSeller ? 13 : 15 }]}>{formatVnd(s.value)}</Text>
+                  <Text style={S.statLabel}>{s.label}</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })()}
 
         {/* ── Transactions ── */}
         <View style={S.card}>
@@ -366,7 +412,7 @@ export function WalletScreen() {
       <DepositModal
         visible={depositVisible}
         onClose={() => setDepositVisible(false)}
-        onSubmit={(amount) => depositMutation.mutate(amount)}
+        onSubmit={(amount, gateway) => depositMutation.mutate({ amount, gateway })}
         loading={depositMutation.isPending}
       />
       <WithdrawModal
@@ -487,4 +533,47 @@ const S = StyleSheet.create({
   },
   modalSubmitText: { fontSize: 15, fontWeight: '800', color: '#fff' },
   btnDim: { opacity: 0.5 },
+
+  // Gateway Selector
+  gatewayBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.bg,
+  },
+  gatewayBtnActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primaryLight,
+  },
+  gatewayIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gatewayLabel: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  gatewayLabelActive: { color: Colors.primary },
+  gatewayDesc: { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterActive: { borderColor: Colors.primary },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
 });

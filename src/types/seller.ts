@@ -1,3 +1,5 @@
+import { RevenueStatus } from './order';
+
 export interface SellerStats {
   totalRevenue: number;
   totalOrders: number;
@@ -79,6 +81,7 @@ export interface SellerOrder {
     phone: string | null;
   };
   items: SellerOrderItem[];
+  revenueStatus?: RevenueStatus;
 }
 
 export interface SellerOrdersResponse {

@@ -5,9 +5,10 @@ export type WalletTransactionType =
   | 'REFUND'
   | 'SELLER_INCOME'
   | 'SELLER_FEE_DEDUCTED'
+  | 'SELLER_REFUND_DEDUCTED'
   | 'ADJUSTMENT';
 
-export type WalletTransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+export type WalletTransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface WalletTransaction {
   id: string;
@@ -44,4 +45,5 @@ export interface WalletStats {
   totalSpent: number;
   totalWithdrawn: number;
   totalRefunded: number;
+  totalDeposited: number;
 }

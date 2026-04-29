@@ -31,8 +31,12 @@ export const orderService = {
     return res.data;
   },
 
-  cancelOrder: async (id: string): Promise<{ order: Order }> => {
-    const res = await api.put<{ order: Order }>(`${BASE}/${id}/cancel`);
+  cancelOrder: async (id: string, reason: string): Promise<{ order: Order }> => {
+    const res = await api.put<{ order: Order }>(`${BASE}/${id}/cancel`, { cancelReason: reason });
     return res.data;
+  },
+
+  handleCancelRequest: async (id: string, action: 'APPROVE' | 'REJECT'): Promise<void> => {
+    await api.put(`/api/v1/seller/orders/${id}/handle-cancel`, { action });
   },
 };

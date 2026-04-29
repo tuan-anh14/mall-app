@@ -28,6 +28,7 @@ const STATUS_OPTS = [
   { key: 'Processing', label: 'Đang xử lý' },
   { key: 'Shipped', label: 'Đang giao' },
   { key: 'Delivered', label: 'Đã giao' },
+  { key: 'CANCEL_REQUESTED', label: 'Yêu cầu hủy' },
   { key: 'Cancelled', label: 'Đã hủy' },
 ];
 
@@ -35,8 +36,16 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
   Processing:    { text: '#D97706', bg: '#FFFBEB' },
   Shipped:       { text: '#2563EB', bg: '#EFF6FF' },
   Delivered:     { text: '#059669', bg: '#ECFDF5' },
+  CANCEL_REQUESTED: { text: '#EF4444', bg: '#FEF2F2' },
   Cancelled:     { text: '#EF4444', bg: '#FEF2F2' },
   Refunded:      { text: '#6B7280', bg: '#F3F4F6' },
+};
+
+const REVENUE_STATUS_CONFIG: Record<string, { label: string; text: string; bg: string }> = {
+  UNPAID:   { label: 'Chưa thanh toán', text: '#6B7280', bg: '#F3F4F6' },
+  PENDING:  { label: 'Sàn tạm giữ',    text: '#D97706', bg: '#FFFBEB' },
+  RELEASED: { label: 'Đã quyết toán',  text: '#059669', bg: '#ECFDF5' },
+  REFUNDED: { label: 'Đã hoàn tiền',   text: '#EF4444', bg: '#FEF2F2' },
 };
 
 const NEXT_STATUS: Record<string, string> = {
@@ -52,10 +61,12 @@ const NEXT_LABEL: Record<string, string> = {
 function OrderCard({
   order,
   onUpdateStatus,
+  onHandleCancel,
   isPending,
 }: {
   order: SellerOrder;
   onUpdateStatus: (status: string) => void;
+  onHandleCancel: (action: 'APPROVE' | 'REJECT') => void;
   isPending: boolean;
 }) {
   const sc = STATUS_COLORS[order.status] ?? { text: Colors.textSub, bg: Colors.bg };
@@ -72,6 +83,15 @@ function OrderCard({
           </Text>
         </View>
       </View>
+
+      {order.revenueStatus && (
+        <View style={[OC.revenueBadge, { backgroundColor: REVENUE_STATUS_CONFIG[order.revenueStatus]?.bg }]}>
+          <Ionicons name="wallet-outline" size={12} color={REVENUE_STATUS_CONFIG[order.revenueStatus]?.text} />
+          <Text style={[OC.revenueText, { color: REVENUE_STATUS_CONFIG[order.revenueStatus]?.text }]}>
+            {REVENUE_STATUS_CONFIG[order.revenueStatus]?.label}
+          </Text>
+        </View>
+      )}
 
       <View style={OC.divider} />
 
@@ -98,18 +118,38 @@ function OrderCard({
 
       <View style={OC.footer}>
         <Text style={OC.total}>{formatVnd(order.total)}</Text>
-        {nextLabel && (
-          <TouchableOpacity
-            style={[OC.updateBtn, isPending && OC.updateBtnDim]}
-            onPress={() => onUpdateStatus(nextStatus!)}
-            disabled={isPending}
-          >
-            {isPending ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={OC.updateBtnText}>{nextLabel}</Text>
-            )}
-          </TouchableOpacity>
+        
+        {order.status === 'CANCEL_REQUESTED' ? (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[OC.cancelBtn, OC.approveBtn, isPending && OC.updateBtnDim]}
+              onPress={() => onHandleCancel('APPROVE')}
+              disabled={isPending}
+            >
+              <Text style={OC.cancelBtnText}>Đồng ý hủy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[OC.cancelBtn, isPending && OC.updateBtnDim]}
+              onPress={() => onHandleCancel('REJECT')}
+              disabled={isPending}
+            >
+              <Text style={[OC.cancelBtnText, { color: Colors.textSub }]}>Từ chối</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          nextLabel && (
+            <TouchableOpacity
+              style={[OC.updateBtn, isPending && OC.updateBtnDim]}
+              onPress={() => onUpdateStatus(nextStatus!)}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={OC.updateBtnText}>{nextLabel}</Text>
+              )}
+            </TouchableOpacity>
+          )
         )}
       </View>
     </View>
@@ -138,6 +178,19 @@ export function SellerOrdersScreen() {
       queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
     },
     onError: () => Alert.alert('Lỗi', 'Không thể cập nhật trạng thái đơn hàng.'),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ orderId, action }: { orderId: string; action: 'APPROVE' | 'REJECT' }) =>
+      sellerOrderService.handleCancelRequest(orderId, action),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
+      Alert.alert('Thành công', variables.action === 'APPROVE' ? 'Đã đồng ý hủy đơn hàng' : 'Đã từ chối hủy đơn');
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || 'Lỗi xử lý yêu cầu hủy';
+      Alert.alert('Lỗi', msg);
+    },
   });
 
   const orders = data?.orders ?? [];
@@ -215,9 +268,14 @@ export function SellerOrdersScreen() {
               onUpdateStatus={(status) =>
                 updateMutation.mutate({ orderId: item.id, status })
               }
+              onHandleCancel={(action) =>
+                cancelMutation.mutate({ orderId: item.id, action })
+              }
               isPending={
-                updateMutation.isPending &&
-                (updateMutation.variables as { orderId: string })?.orderId === item.id
+                (updateMutation.isPending &&
+                  (updateMutation.variables as { orderId: string })?.orderId === item.id) ||
+                (cancelMutation.isPending &&
+                  (cancelMutation.variables as { orderId: string })?.orderId === item.id)
               }
             />
           )}
@@ -267,6 +325,21 @@ const OC = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  revenueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  revenueText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   divider: { height: 1, backgroundColor: Colors.border },
   infoRow: {
     flexDirection: 'row',
@@ -298,6 +371,25 @@ const OC = StyleSheet.create({
   },
   updateBtnDim: { opacity: 0.6 },
   updateBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  cancelBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  approveBtn: {
+    borderColor: Colors.danger,
+    backgroundColor: '#FEF2F2',
+  },
+  cancelBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.danger,
+  },
 });
 
 const S = StyleSheet.create({

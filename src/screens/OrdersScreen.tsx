@@ -45,6 +45,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   SHIPPED:           { label: 'Đang vận chuyển',  color: Colors.primary, bg: Colors.primaryLight },
   OUT_FOR_DELIVERY:  { label: 'Đang giao',        color: '#0891B2', bg: '#ECFEFF' },
   DELIVERED:         { label: 'Đã giao',          color: Colors.success, bg: Colors.successLight },
+  CANCEL_REQUESTED:  { label: 'Đang chờ hủy',      color: '#EF4444', bg: '#FEF2F2' },
   CANCELLED:         { label: 'Đã hủy',           color: Colors.danger, bg: Colors.dangerLight },
   REFUNDED:          { label: 'Đã hoàn tiền',     color: '#6B7280', bg: Colors.bg },
 };
@@ -93,14 +94,21 @@ interface OrderCardProps {
 
 function OrderCard({ order, onDetail, onCancel, cancelling }: OrderCardProps) {
   const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.PENDING;
-  const canCancel = order.status === 'PENDING';
+  const cancellableStatuses = ['PENDING', 'CONFIRMED', 'PROCESSING'];
+  const canCancel = cancellableStatuses.includes(order.status);
 
   return (
     <TouchableOpacity style={S.orderCard} onPress={onDetail} activeOpacity={0.92}>
       {/* Header */}
       <View style={S.orderHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={S.orderId} numberOfLines={1}>{order.id}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="storefront-outline" size={14} color={Colors.primary} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.primary }}>
+              {order.seller?.storeName || 'ShopHub Store'}
+            </Text>
+          </View>
+          <Text style={S.orderId} numberOfLines={1}>Mã: #{order.id.slice(-8).toUpperCase()}</Text>
           <Text style={S.orderDate}>{fmtDate(order.date)}</Text>
         </View>
         <View style={[S.statusBadge, { backgroundColor: cfg.bg }]}>
@@ -174,7 +182,7 @@ export function OrdersScreen() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (id: string) => orderService.cancelOrder(id),
+    mutationFn: (id: string) => orderService.cancelOrder(id, 'Người dùng yêu cầu hủy'),
     onMutate:   (id) => setCancellingId(id),
     onSettled:  () => setCancellingId(null),
     onSuccess:  () => {

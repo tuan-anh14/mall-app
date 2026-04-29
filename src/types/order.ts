@@ -8,6 +8,8 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REFUNDED';
 
+export type RevenueStatus = 'UNPAID' | 'PENDING' | 'RELEASED' | 'REFUNDED';
+
 export interface OrderTrackingStep {
   status: string;
   label: string;
@@ -58,6 +60,11 @@ export interface Order {
   total: number;
   couponCode: string | null;
   couponDiscount: number | null;
+  revenueStatus?: RevenueStatus;
+  seller?: {
+    id: string;
+    storeName: string;
+  };
   paymentMethod: string;
   paymentRef: string | null;
   shippingAddress: OrderShippingAddress;

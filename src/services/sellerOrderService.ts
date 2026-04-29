@@ -37,4 +37,11 @@ export const sellerOrderService = {
     );
     return res.data.order;
   },
+
+  handleCancelRequest: async (
+    orderId: string,
+    action: 'APPROVE' | 'REJECT',
+  ): Promise<void> => {
+    await api.put(`${BASE}/${orderId}/handle-cancel`, { action });
+  },
 };
