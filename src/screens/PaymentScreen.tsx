@@ -33,12 +33,16 @@ export function PaymentScreen() {
   const { paymentUrl, orderId } = route.params;
   const [loading, setLoading] = useState(true);
   const webViewRef = useRef<WebView>(null);
+  const handledReturnUrlRef = useRef<string | null>(null);
 
   const handleNavigationStateChange = (navState: WebViewNavigation) => {
     const { url } = navState;
 
     // Check if we hit the return URL
     if (url.startsWith(MOBILE_RETURN_URL)) {
+      if (handledReturnUrlRef.current === url) return;
+      handledReturnUrlRef.current = url;
+
       // Parse parameters
       const urlObj = new URL(url);
       const queryParams = Object.fromEntries(urlObj.searchParams.entries());
