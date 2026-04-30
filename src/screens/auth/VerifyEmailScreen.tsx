@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -72,12 +74,15 @@ export function VerifyEmailScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <ScreenHeader onBack={() => navigation.goBack()} />
 
         <View style={styles.iconContainer}>
@@ -135,13 +140,15 @@ export function VerifyEmailScreen() {
             <Text style={styles.cancelText}>← Quay lại đăng nhập</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0F5FF' },
+  flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,

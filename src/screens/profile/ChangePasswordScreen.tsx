@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -76,12 +78,15 @@ export function ChangePasswordScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <ScreenHeader title="Đổi mật khẩu" onBack={() => navigation.goBack()} />
 
         {/* Icon */}
@@ -191,13 +196,15 @@ export function ChangePasswordScreen() {
             <Text style={styles.cancelText}>← Quay lại</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0F5FF' },
+  flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,

@@ -564,7 +564,7 @@ export function HomeScreen() {
     queryKey: QUERY_KEYS.wishlist,
     queryFn: wishlistService.getWishlist,
     enabled: isAuthenticated,
-    staleTime: 1000 * 60 * 3,
+    staleTime: 1000 * 30,
   });
   const wishlistedIds = React.useMemo(
     () => new Set((wishlistData?.items ?? []).map((i) => i.productId)),

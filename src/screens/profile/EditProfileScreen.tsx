@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   StatusBar,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -132,12 +134,15 @@ export function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <ScreenHeader title="Chỉnh sửa hồ sơ" onBack={() => navigation.goBack()} />
 
         <Text style={styles.screenDescription}>
@@ -238,13 +243,15 @@ export function EditProfileScreen() {
             style={styles.cancelBtn}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0F5FF' },
+  flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,

@@ -142,7 +142,7 @@ export function CheckoutScreen() {
     queries: productIdsMissingSeller.map((productId) => ({
       queryKey: QUERY_KEYS.product(productId),
       queryFn: () => productService.getProductById(productId),
-      staleTime: 5 * 60_000,
+      staleTime: 1000 * 60 * 5,
     })),
   });
 

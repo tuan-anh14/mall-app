@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Switch,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -121,12 +123,15 @@ export function AddressFormScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardWrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <ScreenHeader
           title={isEditing ? 'Sửa địa chỉ' : 'Thêm địa chỉ mới'}
           onBack={() => navigation.goBack()}
@@ -284,13 +289,15 @@ export function AddressFormScreen() {
             style={styles.cancelBtn}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0F5FF' },
+  keyboardWrap: { flex: 1 },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,

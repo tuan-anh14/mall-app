@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors, Shadows } from '@constants/theme';
@@ -46,7 +46,7 @@ const QUICK_AMOUNTS = [50_000, 100_000, 200_000, 500_000];
 
 const DEPOSIT_GATEWAYS: { key: string; label: string; icon: any; desc: string }[] = [
   { key: 'VNPAY', label: 'VNPAY', icon: 'qr-code-outline', desc: 'ATM / Internet Banking / QR Code' },
-  { key: 'CARD',  label: 'Thẻ quốc tế', icon: 'card-outline',  desc: 'Visa, Mastercard, JCB' },
+  // { key: 'CARD',  label: 'Thẻ quốc tế', icon: 'card-outline',  desc: 'Visa, Mastercard, JCB' },
 ];
 
 function fmtDate(d: string) {
@@ -267,6 +267,7 @@ function WithdrawModal({ visible, onClose, onSubmit, loading }: WithdrawModalPro
 export function WalletScreen() {
   const { user } = useAuth();
   const nav = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const qc  = useQueryClient();
 
   const [depositVisible,  setDepositVisible]  = useState(false);
@@ -276,17 +277,27 @@ export function WalletScreen() {
   const { data: wallet, isLoading: walletLoading } = useQuery({
     queryKey: QUERY_KEYS.wallet,
     queryFn:  walletService.getWallet,
+    staleTime: 0,
   });
 
   const { data: stats } = useQuery({
     queryKey: QUERY_KEYS.walletStats,
     queryFn:  walletService.getStats,
+    staleTime: 0,
   });
 
-  const { data: txData, isLoading: txLoading } = useQuery({
+  const { data: txData, isLoading: txLoading, refetch: refetchTransactions } = useQuery({
     queryKey: QUERY_KEYS.walletTxns(txPage),
     queryFn:  () => walletService.getTransactions({ page: txPage, limit: 15 }),
+    staleTime: 0,
   });
+
+  useEffect(() => {
+    if (!isFocused) return;
+    qc.invalidateQueries({ queryKey: QUERY_KEYS.wallet });
+    qc.invalidateQueries({ queryKey: QUERY_KEYS.walletStats });
+    refetchTransactions();
+  }, [isFocused, qc, refetchTransactions, txPage]);
 
   const depositMutation = useMutation({
     mutationFn: ({ amount, gateway }: { amount: number; gateway: string }) =>

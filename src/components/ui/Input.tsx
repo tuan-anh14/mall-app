@@ -68,6 +68,7 @@ export function Input({
           placeholderTextColor="#9CA3AF"
           onFocus={handleFocus}
           onBlur={handleBlur}
+          showSoftInputOnFocus={rest.showSoftInputOnFocus ?? true}
           autoCapitalize="none"
           autoCorrect={false}
           {...rest}

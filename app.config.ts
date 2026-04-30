@@ -74,6 +74,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#ffffff',
     },
     package: androidPackage[APP_ENV] ?? androidPackage.production,
+    softwareKeyboardLayoutMode: 'pan',
     // versionCode managed by EAS (autoIncrement: true in eas.json)
   },
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { Colors, Shadows } from '@constants/theme';
@@ -31,6 +31,16 @@ import type { Order, OrderStatus } from '@typings/order';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type TabKey = 'all' | OrderStatus;
+const ACTIVE_ORDER_STATUSES = new Set([
+  'PENDING',
+  'CONFIRMED',
+  'PROCESSING',
+  'SHIPPED',
+  'OUT_FOR_DELIVERY',
+  'CANCEL_REQUESTED',
+  'RETURN_REQUESTED',
+  'RETURN_APPROVED',
+]);
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'all',               label: 'Tất cả' },
@@ -225,19 +235,32 @@ function CancelReasonModal({
 
 export function OrdersScreen() {
   const nav = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const qc  = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: QUERY_KEYS.orders(activeTab === 'all' ? undefined : activeTab),
     queryFn:  () => orderService.getOrders({
       status: activeTab === 'all' ? undefined : activeTab,
       limit: 50,
     }),
+    staleTime: 0,
+    refetchInterval: (query) => {
+      const response = query.state.data as Awaited<ReturnType<typeof orderService.getOrders>> | undefined;
+      if (!isFocused) return false;
+      const orders = response?.orders ?? [];
+      return orders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status)) ? 15_000 : false;
+    },
   });
+
+  useEffect(() => {
+    if (!isFocused) return;
+    refetch();
+  }, [isFocused, refetch, activeTab]);
 
   const cancelMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => orderService.cancelOrder(id, reason),
@@ -278,7 +301,7 @@ export function OrdersScreen() {
     queries: productIdsMissingSeller.map((productId) => ({
       queryKey: QUERY_KEYS.product(productId),
       queryFn: () => productService.getProductById(productId),
-      staleTime: 5 * 60_000,
+      staleTime: 1000 * 60 * 5,
     })),
   });
 

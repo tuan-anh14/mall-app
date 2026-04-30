@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import {
   View,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -64,6 +64,16 @@ function fmtDate(d: string | null | undefined) {
 }
 
 const RETURN_WINDOW_DAYS = 7;
+const ACTIVE_ORDER_STATUSES = new Set([
+  'PENDING',
+  'CONFIRMED',
+  'PROCESSING',
+  'SHIPPED',
+  'OUT_FOR_DELIVERY',
+  'CANCEL_REQUESTED',
+  'RETURN_REQUESTED',
+  'RETURN_APPROVED',
+]);
 
 function getDeliveredAt(order: NonNullable<Awaited<ReturnType<typeof orderService.getOrderById>>['order']>) {
   const deliveredStep = order.tracking.steps.find(
@@ -154,6 +164,7 @@ const TL = StyleSheet.create({
 export function OrderDetailScreen() {
   const route = useRoute<RouteT>();
   const nav = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const qc = useQueryClient();
   const { orderId } = route.params;
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -162,10 +173,21 @@ export function OrderDetailScreen() {
   const [returnReason, setReturnReason] = useState('');
   const [returnImages, setReturnImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: QUERY_KEYS.order(orderId),
     queryFn: () => orderService.getOrderById(orderId),
+    staleTime: 0,
+    refetchInterval: (query) => {
+      const order = (query.state.data as Awaited<ReturnType<typeof orderService.getOrderById>> | undefined)?.order;
+      if (!isFocused || !order) return false;
+      return ACTIVE_ORDER_STATUSES.has(order.status) ? 10_000 : false;
+    },
   });
+
+  useEffect(() => {
+    if (!isFocused) return;
+    refetch();
+  }, [isFocused, refetch]);
 
   const cancelMutation = useMutation({
     mutationFn: (reason: string) => orderService.cancelOrder(orderId, reason),
