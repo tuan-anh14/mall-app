@@ -64,6 +64,7 @@ export interface SellerOrder {
   id: string;
   date: string;
   status: string;
+  rawStatus?: string;
   total: number;
   subtotal: number;
   shippingCost: number;
@@ -82,6 +83,8 @@ export interface SellerOrder {
   };
   items: SellerOrderItem[];
   revenueStatus?: RevenueStatus;
+  isPaidOnline?: boolean;
+  returnRequest?: { id: string };
 }
 
 export interface SellerOrdersResponse {

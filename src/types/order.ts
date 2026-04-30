@@ -5,8 +5,12 @@ export type OrderStatus =
   | 'SHIPPED'
   | 'OUT_FOR_DELIVERY'
   | 'DELIVERED'
+  | 'CANCEL_REQUESTED'
   | 'CANCELLED'
-  | 'REFUNDED';
+  | 'REFUNDED'
+  | 'RETURN_REQUESTED'
+  | 'RETURN_APPROVED'
+  | 'RETURNED';
 
 export type RevenueStatus = 'UNPAID' | 'PENDING' | 'RELEASED' | 'REFUNDED';
 
@@ -22,6 +26,9 @@ export interface OrderTrackingStep {
 export interface OrderItem {
   id: string;
   productId: string;
+  sellerOrderId?: string;
+  sellerId?: string;
+  sellerName?: string;
   quantity: number;
   price: number;
   selectedColor: string | null;

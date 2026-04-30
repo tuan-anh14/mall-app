@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -65,10 +65,12 @@ function MessageBubble({
   msg,
   isMine,
   onLongPress,
+  onImagePress,
 }: {
   msg: ChatMessage;
   isMine: boolean;
   onLongPress: () => void;
+  onImagePress: (uri: string) => void;
 }) {
   return (
     <View style={[MB.wrapper, isMine ? MB.wrapperRight : MB.wrapperLeft]}>
@@ -91,11 +93,16 @@ function MessageBubble({
         activeOpacity={0.85}
       >
         {msg.attachmentUrl && msg.attachmentType?.startsWith('image') && (
-          <Image
-            source={{ uri: msg.attachmentUrl }}
-            style={MB.attachImage}
-            resizeMode="cover"
-          />
+          <TouchableOpacity
+            onPress={() => onImagePress(msg.attachmentUrl!)}
+            activeOpacity={0.88}
+          >
+            <Image
+              source={{ uri: msg.attachmentUrl }}
+              style={MB.attachImage}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
         )}
         {msg.text ? (
           <Text style={[MB.text, isMine ? MB.textMine : MB.textOther]}>
@@ -121,6 +128,7 @@ export function ChatScreen() {
   const [text, setText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
   const flatRef = useRef<FlatList>(null);
 
   const { data, isLoading, isError } = useQuery({
@@ -229,7 +237,7 @@ export function ChatScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
-      allowsEditing: true,
+      allowsEditing: false,
     });
 
     if (!result.canceled && result.assets?.[0]) {
@@ -269,7 +277,7 @@ export function ChatScreen() {
       <KeyboardAvoidingView
         style={S.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+        keyboardVerticalOffset={0}
       >
         {isLoading ? (
           <View style={S.center}>
@@ -297,10 +305,13 @@ export function ChatScreen() {
                   msg={item}
                   isMine={isMine}
                   onLongPress={() => handleLongPress(item, isMine)}
+                  onImagePress={setZoomImageUrl}
                 />
               );
             }}
             contentContainerStyle={S.listContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={[S.emptyWrap, { transform: [{ scaleY: -1 }] }]}>
@@ -316,7 +327,7 @@ export function ChatScreen() {
         )}
 
         {/* Input Bar */}
-        <View style={[S.inputBar, { paddingBottom: Platform.OS === 'ios' && !showEmojiPicker ? Math.max(insets.bottom, 16) : 10 }]}>
+        <View style={[S.inputBar, { paddingBottom: !showEmojiPicker ? Math.max(insets.bottom, 10) : 10 }]}>
           <TouchableOpacity 
             style={S.attachBtn} 
             onPress={handlePickImage}
@@ -389,6 +400,17 @@ export function ChatScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+
+      <Modal visible={!!zoomImageUrl} transparent animationType="fade" onRequestClose={() => setZoomImageUrl(null)}>
+        <View style={S.zoomModal}>
+          <TouchableOpacity style={S.zoomClose} onPress={() => setZoomImageUrl(null)}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {zoomImageUrl ? (
+            <Image source={{ uri: zoomImageUrl }} style={S.zoomImage} resizeMode="contain" />
+          ) : null}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -598,4 +620,26 @@ const S = StyleSheet.create({
     ...Shadows.button,
   },
   sendBtnDim: { opacity: 0.5 },
+  zoomModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomClose: {
+    position: 'absolute',
+    top: 48,
+    right: 18,
+    zIndex: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomImage: {
+    width: '100%',
+    height: '100%',
+  },
 });

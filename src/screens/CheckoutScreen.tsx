@@ -11,7 +11,7 @@ import {
 import { MOBILE_RETURN_URL } from './PaymentScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Shadows } from '@constants/theme';
@@ -19,8 +19,10 @@ import { QUERY_KEYS } from '@constants/queryKeys';
 import { userService } from '@services/userService';
 import { orderService } from '@services/orderService';
 import { cartService } from '@services/cartService';
+import { productService } from '@services/productService';
+import { walletService } from '@services/walletService';
 import { useCartStore } from '@store/cartStore';
-import { formatVnd } from '@utils/index';
+import { formatVnd, getApiErrorMessage } from '@utils/index';
 import type { ShippingAddress } from '@typings/profile';
 import type { RootStackParamList } from '@app/navigation/types';
 
@@ -130,6 +132,34 @@ export function CheckoutScreen() {
 
   const cart = cartData?.cart;
 
+  const { data: wallet, isLoading: walletLoading } = useQuery({
+    queryKey: QUERY_KEYS.wallet,
+    queryFn: walletService.getWallet,
+    enabled: paymentMethod === 'wallet',
+  });
+
+  const productIdsMissingSeller = Array.from(new Set(
+    (cart?.items ?? [])
+      .filter((item) => !item.product.seller && !item.product.sellerId && !item.product.sellerName)
+      .map((item) => item.productId),
+  ));
+
+  const productDetailQueries = useQueries({
+    queries: productIdsMissingSeller.map((productId) => ({
+      queryKey: QUERY_KEYS.product(productId),
+      queryFn: () => productService.getProductById(productId),
+      staleTime: 5 * 60_000,
+    })),
+  });
+
+  const productDetailsById = new Map(
+    productDetailQueries
+      .map((q) => q.data)
+      .filter((product): product is NonNullable<typeof product> => product != null)
+      .map((product) => [product.id, product]),
+  );
+  const isLoadingSellerDetails = productDetailQueries.some((q) => q.isLoading);
+
   const orderMutation = useMutation({
     mutationFn: orderService.createOrder,
     onSuccess: async (res) => {
@@ -146,8 +176,7 @@ export function CheckoutScreen() {
       navigation.navigate('OrderDetail', { orderId });
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
-      const msg = apiErr?.response?.data?.error?.message ?? 'Đặt hàng thất bại. Vui lòng thử lại.';
+      const msg = getApiErrorMessage(err, 'Đặt hàng thất bại. Vui lòng thử lại.');
       Alert.alert('Lỗi đặt hàng', msg);
     },
   });
@@ -160,6 +189,20 @@ export function CheckoutScreen() {
     if (!cart || cart.items.length === 0) {
       Alert.alert('Giỏ hàng trống', 'Không có sản phẩm nào để đặt hàng.');
       return;
+    }
+    if (paymentMethod === 'wallet') {
+      if (walletLoading) {
+        Alert.alert('Đang kiểm tra ví', 'Vui lòng chờ hệ thống tải số dư ví.');
+        return;
+      }
+      const balance = wallet?.balance ?? 0;
+      if (balance < total) {
+        Alert.alert(
+          'Số dư ví không đủ',
+          `Số dư hiện có: ${formatVnd(balance)}\nCần thanh toán: ${formatVnd(total)}\nVui lòng nạp thêm tiền hoặc chọn phương thức khác.`,
+        );
+        return;
+      }
     }
     Alert.alert(
       'Xác nhận đặt hàng',
@@ -186,8 +229,21 @@ export function CheckoutScreen() {
   const shipping = subtotal >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
   const tax = subtotal * TAX_RATE;
   const total = subtotal + shipping + tax;
+  const sellerGroups = Object.values(
+    (cart?.items ?? []).reduce<Record<string, { sellerId: string; sellerName: string; items: NonNullable<typeof cart>['items'] }>>(
+      (acc, item) => {
+        const detail = productDetailsById.get(item.productId);
+        const sellerId = item.product.seller?.id ?? item.product.sellerId ?? detail?.seller?.id ?? 'default';
+        const sellerName = item.product.seller?.storeName ?? item.product.sellerName ?? detail?.seller?.storeName ?? 'ShopHub Store';
+        if (!acc[sellerId]) acc[sellerId] = { sellerId, sellerName, items: [] };
+        acc[sellerId].items.push(item);
+        return acc;
+      },
+      {},
+    ),
+  );
 
-  const isLoading = addressLoading || cartLoading;
+  const isLoading = addressLoading || cartLoading || isLoadingSellerDetails;
 
   if (isLoading) {
     return (
@@ -264,22 +320,31 @@ export function CheckoutScreen() {
               Sản phẩm ({cart?.itemCount ?? 0})
             </Text>
           </View>
-          {(cart?.items ?? []).map((item) => (
-            <View key={item.id} style={S.orderItem}>
-              <Text style={S.orderItemName} numberOfLines={1}>
-                {item.product.name}
-              </Text>
-              <View style={S.orderItemRight}>
-                {(item.selectedColor || item.selectedSize) && (
-                  <Text style={S.orderItemVariant}>
-                    {[item.selectedColor, item.selectedSize].filter(Boolean).join(' · ')}
-                  </Text>
-                )}
-                <Text style={S.orderItemQty}>x{item.quantity}</Text>
-                <Text style={S.orderItemPrice}>
-                  {formatVnd(item.product.price * item.quantity)}
-                </Text>
+          {sellerGroups.map((group) => (
+            <View key={group.sellerId} style={S.sellerGroup}>
+              <View style={S.sellerGroupHeader}>
+                <Ionicons name="storefront-outline" size={14} color={Colors.primary} />
+                <Text style={S.sellerGroupName}>{group.sellerName}</Text>
+                <Text style={S.sellerGroupCount}>{group.items.length} sản phẩm</Text>
               </View>
+              {group.items.map((item) => (
+                <View key={item.id} style={S.orderItem}>
+                  <Text style={S.orderItemName} numberOfLines={1}>
+                    {item.product.name}
+                  </Text>
+                  <View style={S.orderItemRight}>
+                    {(item.selectedColor || item.selectedSize) && (
+                      <Text style={S.orderItemVariant}>
+                        {[item.selectedColor, item.selectedSize].filter(Boolean).join(' · ')}
+                      </Text>
+                    )}
+                    <Text style={S.orderItemQty}>x{item.quantity}</Text>
+                    <Text style={S.orderItemPrice}>
+                      {formatVnd(item.product.price * item.quantity)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
           ))}
         </View>
@@ -529,11 +594,38 @@ const S = StyleSheet.create({
   },
 
   // Order Items
+  sellerGroup: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.inputBg,
+  },
+  sellerGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: Colors.primaryLight,
+  },
+  sellerGroupName: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.primary,
+  },
+  sellerGroupCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+  },
   orderItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     gap: 8,
   },
   orderItemName: {

@@ -11,16 +11,17 @@ export const sellerOrderService = {
     limit?: number;
   }): Promise<SellerOrdersResponse> => {
     const res = await api.get<any>(BASE, { params });
-    const rawData = res.data?.data || [];
+    const rawData = res.data?.data || res.data?.orders || [];
     const orders = rawData.map((o: any) => ({
       ...o,
       buyerName: o.customer?.name || 'Khách hàng',
       buyerEmail: o.customer?.email || '',
+      rawStatus: o.rawStatus || o.status,
     }));
     
     return {
       orders,
-      total: res.data?.stats?.total || 0,
+      total: res.data?.stats?.total || res.data?.total || orders.length,
       page: params?.page || 1,
       limit: params?.limit || 10,
       totalPages: 1,

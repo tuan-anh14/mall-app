@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import {
   View,
   Text,
@@ -8,6 +9,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +21,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors, Shadows } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import { orderService } from '@services/orderService';
+import { returnService } from '@services/returnService';
 import { formatVnd } from '@utils/index';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import type { RootStackParamList } from '@app/navigation/types';
@@ -37,6 +41,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   DELIVERED: { label: 'Đã giao', color: Colors.success, bg: Colors.successLight },
   CANCELLED: { label: 'Đã hủy', color: Colors.danger, bg: Colors.dangerLight },
   REFUNDED: { label: 'Đã hoàn tiền', color: '#6B7280', bg: Colors.bg },
+  CANCEL_REQUESTED: { label: 'Đang chờ hủy', color: '#EF4444', bg: '#FEF2F2' },
+  RETURN_REQUESTED: { label: 'Yêu cầu đổi/trả', color: '#2563EB', bg: '#EFF6FF' },
+  RETURN_APPROVED: { label: 'Đã duyệt đổi/trả', color: '#2563EB', bg: '#EFF6FF' },
+  RETURNED: { label: 'Đã trả hàng', color: Colors.success, bg: Colors.successLight },
 };
 
 const PAY_LABELS: Record<string, string> = {
@@ -91,6 +99,17 @@ function Timeline({ steps }: { steps: OrderTrackingStep[] }) {
   );
 }
 
+function buildImagesFormData(assets: ImagePicker.ImagePickerAsset[]) {
+  const formData = new FormData();
+  assets.forEach((asset, index) => {
+    const fileName = asset.uri.split('/').pop() || `return_${index}.jpg`;
+    const match = /\.(\w+)$/.exec(fileName);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+    formData.append('files', { uri: asset.uri, name: fileName, type } as any);
+  });
+  return formData;
+}
+
 const TL = StyleSheet.create({
   wrap: { paddingLeft: 4 },
   row: { flexDirection: 'row', gap: 14, marginBottom: 0 },
@@ -119,6 +138,11 @@ export function OrderDetailScreen() {
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
   const { orderId } = route.params;
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnImages, setReturnImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: QUERY_KEYS.order(orderId),
@@ -126,24 +150,65 @@ export function OrderDetailScreen() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => orderService.cancelOrder(orderId),
+    mutationFn: (reason: string) => orderService.cancelOrder(orderId, reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orders'] });
       qc.invalidateQueries({ queryKey: QUERY_KEYS.order(orderId) });
-      Alert.alert('Đã hủy', 'Đơn hàng đã được hủy thành công');
+      setCancelModalOpen(false);
+      setCancelReason('');
+      Alert.alert('Đã gửi yêu cầu', 'Yêu cầu hủy đơn hàng đã được gửi thành công');
     },
     onError: () => Alert.alert('Lỗi', 'Không thể hủy đơn hàng lúc này'),
   });
 
   function confirmCancel() {
-    Alert.alert(
-      'Hủy đơn hàng',
-      'Bạn có chắc muốn hủy đơn hàng này không?',
-      [
-        { text: 'Không', style: 'cancel' },
-        { text: 'Hủy đơn', style: 'destructive', onPress: () => cancelMutation.mutate() },
-      ],
-    );
+    setCancelModalOpen(true);
+  }
+
+  function submitCancel() {
+    const reason = cancelReason.trim();
+    if (!reason) {
+      Alert.alert('Thiếu lý do', 'Vui lòng nhập lý do hủy đơn.');
+      return;
+    }
+    cancelMutation.mutate(reason);
+  }
+
+  const returnMutation = useMutation({
+    mutationFn: async () => {
+      const reason = returnReason.trim();
+      if (!reason) throw new Error('Vui lòng nhập lý do đổi trả hàng.');
+      if (returnImages.length === 0) throw new Error('Vui lòng tải lên ít nhất một ảnh minh chứng.');
+      const urls = await returnService.uploadImages(buildImagesFormData(returnImages));
+      return returnService.createRequest({ orderId, reason, images: urls });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.order(orderId) });
+      setReturnModalOpen(false);
+      setReturnReason('');
+      setReturnImages([]);
+      Alert.alert('Thành công', 'Yêu cầu đổi trả đã được gửi thành công.');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || error?.message || 'Không thể gửi yêu cầu đổi trả.';
+      Alert.alert('Lỗi', msg);
+    },
+  });
+
+  async function pickReturnImages() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Quyền truy cập', 'Vui lòng cho phép truy cập thư viện ảnh để tải ảnh minh chứng.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    setReturnImages((prev) => [...prev, ...result.assets].slice(0, 5));
   }
 
   if (isLoading) {
@@ -169,7 +234,8 @@ export function OrderDetailScreen() {
 
   const { order } = data;
   const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.PENDING;
-  const canCancel = order.status === 'PENDING';
+  const canCancel = ['PENDING', 'CONFIRMED', 'PROCESSING'].includes(order.status);
+  const canReturn = order.status === 'DELIVERED';
 
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
@@ -299,7 +365,92 @@ export function OrderDetailScreen() {
           </TouchableOpacity>
         )}
 
+        {canReturn && (
+          <TouchableOpacity
+            style={[S.returnBtn, returnMutation.isPending && { opacity: 0.5 }]}
+            onPress={() => setReturnModalOpen(true)}
+            disabled={returnMutation.isPending}
+          >
+            <Text style={S.returnBtnText}>Yêu cầu trả hàng</Text>
+          </TouchableOpacity>
+        )}
+
       </ScrollView>
+
+      <Modal visible={cancelModalOpen} transparent animationType="fade" onRequestClose={() => setCancelModalOpen(false)}>
+        <View style={S.modalBackdrop}>
+          <View style={S.modalCard}>
+            <Text style={S.modalTitle}>Hủy đơn hàng</Text>
+            <Text style={S.modalSub}>Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng.</Text>
+            <TextInput
+              style={S.textarea}
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              placeholder="Ví dụ: Tôi muốn đổi địa chỉ, đặt nhầm sản phẩm..."
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            <View style={S.modalActions}>
+              <TouchableOpacity style={S.modalGhostBtn} onPress={() => setCancelModalOpen(false)} disabled={cancelMutation.isPending}>
+                <Text style={S.modalGhostText}>Đóng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[S.modalDangerBtn, cancelMutation.isPending && { opacity: 0.6 }]} onPress={submitCancel} disabled={cancelMutation.isPending}>
+                {cancelMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={S.modalDangerText}>Xác nhận hủy</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={returnModalOpen} transparent animationType="fade" onRequestClose={() => setReturnModalOpen(false)}>
+        <View style={S.modalBackdrop}>
+          <View style={S.modalCard}>
+            <Text style={S.modalTitle}>Yêu cầu đổi trả hàng</Text>
+            <Text style={S.modalSub}>Mô tả lý do và tải lên ảnh minh chứng. Tối đa 5 ảnh.</Text>
+            <TextInput
+              style={S.textarea}
+              value={returnReason}
+              onChangeText={setReturnReason}
+              placeholder="Sản phẩm lỗi, không đúng mẫu, thiếu phụ kiện..."
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            <View style={S.imagePickerRow}>
+              <TouchableOpacity style={S.pickImageBtn} onPress={pickReturnImages} disabled={returnMutation.isPending || returnImages.length >= 5}>
+                <Ionicons name="image-outline" size={18} color={Colors.primary} />
+                <Text style={S.pickImageText}>Thêm ảnh ({returnImages.length}/5)</Text>
+              </TouchableOpacity>
+            </View>
+            {returnImages.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {returnImages.map((asset, index) => (
+                  <View key={`${asset.uri}-${index}`} style={S.returnThumb}>
+                    <Image source={{ uri: asset.uri }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+                    <TouchableOpacity
+                      style={S.removeImageBtn}
+                      onPress={() => setReturnImages((prev) => prev.filter((_, i) => i !== index))}
+                    >
+                      <Ionicons name="close" size={12} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <View style={S.modalActions}>
+              <TouchableOpacity style={S.modalGhostBtn} onPress={() => setReturnModalOpen(false)} disabled={returnMutation.isPending}>
+                <Text style={S.modalGhostText}>Hủy bỏ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[S.modalPrimaryBtn, returnMutation.isPending && { opacity: 0.6 }]} onPress={() => returnMutation.mutate()} disabled={returnMutation.isPending}>
+                {returnMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={S.modalPrimaryText}>Gửi yêu cầu</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -356,4 +507,102 @@ const S = StyleSheet.create({
     marginTop: 4,
   },
   cancelBtnText: { fontSize: 15, fontWeight: '700', color: Colors.danger },
+  returnBtn: {
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primaryLight,
+    marginTop: 4,
+  },
+  returnBtnText: { fontSize: 15, fontWeight: '700', color: Colors.primary },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '88%',
+    borderRadius: 18,
+    backgroundColor: Colors.surface,
+    padding: 18,
+    gap: 12,
+    ...Shadows.card,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
+  modalSub: { fontSize: 13, color: Colors.textSub, lineHeight: 18 },
+  textarea: {
+    minHeight: 110,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 12,
+    color: Colors.text,
+    backgroundColor: Colors.bg,
+  },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  modalGhostBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg,
+  },
+  modalGhostText: { fontSize: 14, fontWeight: '700', color: Colors.textSub },
+  modalDangerBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.danger,
+  },
+  modalDangerText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  modalPrimaryBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+  },
+  modalPrimaryText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  imagePickerRow: { flexDirection: 'row' },
+  pickImageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primaryLight,
+  },
+  pickImageText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  returnThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: Colors.bg,
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239,68,68,0.9)',
+  },
 });

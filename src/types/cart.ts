@@ -10,6 +10,12 @@ export interface CartProduct {
   image: string | null;
   colors: Array<{ id: string; name: string; hexCode: string }>;
   sizes: string[];
+  seller?: {
+    id: string;
+    storeName: string;
+  } | null;
+  sellerId?: string | null;
+  sellerName?: string | null;
 }
 
 export interface CartItem {

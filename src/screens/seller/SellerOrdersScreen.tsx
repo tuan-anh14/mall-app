@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  Modal,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +20,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Shadows } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import { sellerOrderService } from '@services/sellerOrderService';
+import { returnService, type ReturnRequest } from '@services/returnService';
 import { formatVnd } from '@utils/index';
 import type { SellerOrder } from '@typings/seller';
 import type { SellerStackParamList } from '@app/navigation/types';
@@ -25,17 +29,25 @@ type Nav = NativeStackNavigationProp<SellerStackParamList>;
 
 const STATUS_OPTS = [
   { key: 'all', label: 'Tất cả' },
+  { key: 'Pending', label: 'Chờ xác nhận' },
+  { key: 'Confirmed', label: 'Đã xác nhận' },
   { key: 'Processing', label: 'Đang xử lý' },
   { key: 'Shipped', label: 'Đang giao' },
   { key: 'Delivered', label: 'Đã giao' },
+  { key: 'RETURN_REQUESTED', label: 'Đổi / Trả' },
+  { key: 'RETURNED', label: 'Đã trả' },
   { key: 'CANCEL_REQUESTED', label: 'Yêu cầu hủy' },
   { key: 'Cancelled', label: 'Đã hủy' },
 ];
 
 const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
+  Pending:       { text: '#D97706', bg: '#FFFBEB' },
+  Confirmed:     { text: '#2563EB', bg: '#EFF6FF' },
   Processing:    { text: '#D97706', bg: '#FFFBEB' },
   Shipped:       { text: '#2563EB', bg: '#EFF6FF' },
   Delivered:     { text: '#059669', bg: '#ECFDF5' },
+  RETURN_REQUESTED: { text: '#2563EB', bg: '#EFF6FF' },
+  RETURNED:      { text: '#059669', bg: '#ECFDF5' },
   CANCEL_REQUESTED: { text: '#EF4444', bg: '#FEF2F2' },
   Cancelled:     { text: '#EF4444', bg: '#FEF2F2' },
   Refunded:      { text: '#6B7280', bg: '#F3F4F6' },
@@ -49,11 +61,15 @@ const REVENUE_STATUS_CONFIG: Record<string, { label: string; text: string; bg: s
 };
 
 const NEXT_STATUS: Record<string, string> = {
+  Pending:    'Processing',
+  Confirmed:  'Processing',
   Processing: 'Shipped',
   Shipped:    'Delivered',
 };
 
 const NEXT_LABEL: Record<string, string> = {
+  Pending:    'Chuẩn bị hàng',
+  Confirmed:  'Chuẩn bị hàng',
   Processing: 'Giao hàng',
   Shipped:    'Đã giao',
 };
@@ -62,11 +78,13 @@ function OrderCard({
   order,
   onUpdateStatus,
   onHandleCancel,
+  onManageReturn,
   isPending,
 }: {
   order: SellerOrder;
   onUpdateStatus: (status: string) => void;
   onHandleCancel: (action: 'APPROVE' | 'REJECT') => void;
+  onManageReturn: () => void;
   isPending: boolean;
 }) {
   const sc = STATUS_COLORS[order.status] ?? { text: Colors.textSub, bg: Colors.bg };
@@ -136,6 +154,14 @@ function OrderCard({
               <Text style={[OC.cancelBtnText, { color: Colors.textSub }]}>Từ chối</Text>
             </TouchableOpacity>
           </View>
+        ) : order.status === 'RETURN_REQUESTED' ? (
+          <TouchableOpacity
+            style={[OC.updateBtn, isPending && OC.updateBtnDim]}
+            onPress={onManageReturn}
+            disabled={isPending}
+          >
+            <Text style={OC.updateBtnText}>Quản lý đổi/trả</Text>
+          </TouchableOpacity>
         ) : (
           nextLabel && (
             <TouchableOpacity
@@ -156,11 +182,162 @@ function OrderCard({
   );
 }
 
+function SellerReturnModal({
+  visible,
+  requestId,
+  onClose,
+  onSuccess,
+}: {
+  visible: boolean;
+  requestId: string | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [request, setRequest] = useState<ReturnRequest | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [sellerNote, setSellerNote] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+
+  useEffect(() => {
+    if (!visible || !requestId) return;
+    let active = true;
+    setLoading(true);
+    returnService.getRequestById(requestId)
+      .then((data) => {
+        if (!active) return;
+        setRequest(data);
+        setSellerNote(data.sellerNote || '');
+        setRefundAmount((data.refundAmount ?? data.order.total).toString());
+      })
+      .catch((err: any) => {
+        const msg = err?.response?.data?.message || err?.message || 'Không thể tải chi tiết yêu cầu.';
+        Alert.alert('Lỗi', msg);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [visible, requestId]);
+
+  async function updateStatus(status: 'APPROVED' | 'REJECTED') {
+    if (!requestId) return;
+    setSubmitting(true);
+    try {
+      await returnService.updateStatus(requestId, {
+        status,
+        sellerNote: sellerNote.trim() || undefined,
+        refundAmount: refundAmount ? Number(refundAmount) : undefined,
+      });
+      Alert.alert('Thành công', 'Cập nhật yêu cầu đổi trả thành công.');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Không thể cập nhật yêu cầu.';
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function confirmReceipt() {
+    if (!requestId) return;
+    setSubmitting(true);
+    try {
+      await returnService.confirmReceipt(requestId);
+      Alert.alert('Thành công', 'Đã xác nhận nhận hàng và hoàn tiền cho khách.');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Không thể xác nhận nhận hàng.';
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={S.modalBackdrop}>
+        <View style={S.modalCard}>
+          <Text style={S.modalTitle}>Quản lý yêu cầu trả hàng</Text>
+          {loading ? (
+            <View style={S.modalLoading}>
+              <ActivityIndicator color={Colors.primary} />
+              <Text style={S.modalSub}>Đang tải chi tiết...</Text>
+            </View>
+          ) : request ? (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              <View style={S.returnInfoBox}>
+                <Text style={S.returnLabel}>Khách hàng</Text>
+                <Text style={S.returnText}>{request.user.firstName} {request.user.lastName} ({request.user.email})</Text>
+                <Text style={S.returnLabel}>Lý do từ khách hàng</Text>
+                <Text style={S.returnReason}>{request.reason}</Text>
+                {request.images.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    {request.images.map((url) => (
+                      <Image key={url} source={{ uri: url }} style={S.returnImage} resizeMode="cover" />
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+              <TextInput
+                style={S.modalInput}
+                value={refundAmount}
+                onChangeText={setRefundAmount}
+                keyboardType="numeric"
+                placeholder="Số tiền hoàn"
+                placeholderTextColor={Colors.textMuted}
+              />
+              <TextInput
+                style={S.modalTextarea}
+                value={sellerNote}
+                onChangeText={setSellerNote}
+                placeholder="Ghi chú / phản hồi cho khách hàng..."
+                placeholderTextColor={Colors.textMuted}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+              {request.status === 'PENDING' && (
+                <View style={S.modalActions}>
+                  <TouchableOpacity style={[S.rejectBtn, submitting && S.updateBtnDim]} onPress={() => updateStatus('REJECTED')} disabled={submitting}>
+                    <Text style={S.rejectText}>Từ chối</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[S.approveReturnBtn, submitting && S.updateBtnDim]} onPress={() => updateStatus('APPROVED')} disabled={submitting}>
+                    <Text style={S.approveReturnText}>Chấp nhận</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {request.status === 'APPROVED' && (
+                <TouchableOpacity style={[S.confirmReceiptBtn, submitting && S.updateBtnDim]} onPress={confirmReceipt} disabled={submitting}>
+                  <Text style={S.confirmReceiptText}>Xác nhận đã nhận hàng & hoàn tiền</Text>
+                </TouchableOpacity>
+              )}
+              {request.status === 'COMPLETED' && (
+                <Text style={S.completedText}>Yêu cầu này đã hoàn tất và hoàn tiền.</Text>
+              )}
+            </ScrollView>
+          ) : (
+            <Text style={S.modalSub}>Không tìm thấy thông tin yêu cầu.</Text>
+          )}
+          <TouchableOpacity style={S.closeModalBtn} onPress={onClose} disabled={submitting}>
+            <Text style={S.closeModalText}>Đóng</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export function SellerOrdersScreen() {
   const navigation = useNavigation<Nav>();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [activeStatus, setActiveStatus] = useState('all');
+  const [selectedReturnRequestId, setSelectedReturnRequestId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: QUERY_KEYS.sellerOrders(`${activeStatus}-${search}`),
@@ -271,6 +448,13 @@ export function SellerOrdersScreen() {
               onHandleCancel={(action) =>
                 cancelMutation.mutate({ orderId: item.id, action })
               }
+              onManageReturn={() => {
+                if (!item.returnRequest?.id) {
+                  Alert.alert('Thiếu dữ liệu', 'Đơn này chưa có mã yêu cầu đổi trả.');
+                  return;
+                }
+                setSelectedReturnRequestId(item.returnRequest.id);
+              }}
               isPending={
                 (updateMutation.isPending &&
                   (updateMutation.variables as { orderId: string })?.orderId === item.id) ||
@@ -293,6 +477,12 @@ export function SellerOrdersScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+      <SellerReturnModal
+        visible={!!selectedReturnRequestId}
+        requestId={selectedReturnRequestId}
+        onClose={() => setSelectedReturnRequestId(null)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] })}
+      />
     </SafeAreaView>
   );
 }
@@ -472,4 +662,111 @@ const S = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textSub,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '88%',
+    borderRadius: 18,
+    backgroundColor: Colors.surface,
+    padding: 18,
+    gap: 12,
+    ...Shadows.card,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
+  modalSub: { fontSize: 13, color: Colors.textSub, lineHeight: 18 },
+  modalLoading: { alignItems: 'center', gap: 8, paddingVertical: 24 },
+  returnInfoBox: {
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.bg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  returnLabel: { fontSize: 11, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase' },
+  returnText: { fontSize: 13, fontWeight: '700', color: Colors.text },
+  returnReason: {
+    fontSize: 13,
+    color: Colors.text,
+    lineHeight: 18,
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
+    padding: 10,
+  },
+  returnImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
+    backgroundColor: Colors.border,
+  },
+  modalInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    color: Colors.text,
+    backgroundColor: Colors.bg,
+  },
+  modalTextarea: {
+    minHeight: 90,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 12,
+    color: Colors.text,
+    backgroundColor: Colors.bg,
+  },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  updateBtnDim: { opacity: 0.6 },
+  rejectBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    backgroundColor: Colors.dangerLight,
+  },
+  rejectText: { fontSize: 14, fontWeight: '800', color: Colors.danger },
+  approveReturnBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+  },
+  approveReturnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  confirmReceiptBtn: {
+    minHeight: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.success,
+    paddingHorizontal: 12,
+  },
+  confirmReceiptText: { fontSize: 14, fontWeight: '800', color: '#fff', textAlign: 'center' },
+  completedText: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.successLight,
+    color: Colors.success,
+    fontWeight: '700',
+  },
+  closeModalBtn: {
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg,
+  },
+  closeModalText: { fontSize: 14, fontWeight: '700', color: Colors.textSub },
 });

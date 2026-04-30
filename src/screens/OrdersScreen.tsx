@@ -9,15 +9,18 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { Colors, Shadows } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import { orderService } from '@services/orderService';
+import { productService } from '@services/productService';
 import { formatVnd } from '@utils/index';
 import { ScreenHeader } from '@components/ui/ScreenHeader';
 import type { RootStackParamList } from '@app/navigation/types';
@@ -33,9 +36,13 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'all',               label: 'Tất cả' },
   { key: 'PENDING',           label: 'Chờ xác nhận' },
   { key: 'CONFIRMED',         label: 'Đã xác nhận' },
+  { key: 'PROCESSING',        label: 'Đang xử lý' },
   { key: 'SHIPPED',           label: 'Đang giao' },
+  { key: 'OUT_FOR_DELIVERY',  label: 'Đang giao' },
   { key: 'DELIVERED',         label: 'Đã giao' },
+  { key: 'CANCEL_REQUESTED',  label: 'Chờ hủy' },
   { key: 'CANCELLED',         label: 'Đã hủy' },
+  { key: 'RETURN_REQUESTED',  label: 'Đổi/trả' },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -48,6 +55,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   CANCEL_REQUESTED:  { label: 'Đang chờ hủy',      color: '#EF4444', bg: '#FEF2F2' },
   CANCELLED:         { label: 'Đã hủy',           color: Colors.danger, bg: Colors.dangerLight },
   REFUNDED:          { label: 'Đã hoàn tiền',     color: '#6B7280', bg: Colors.bg },
+  RETURN_REQUESTED:  { label: 'Yêu cầu đổi/trả', color: '#2563EB', bg: '#EFF6FF' },
+  RETURN_APPROVED:   { label: 'Đã duyệt đổi/trả', color: '#2563EB', bg: '#EFF6FF' },
+  RETURNED:          { label: 'Đã trả hàng',       color: Colors.success, bg: Colors.successLight },
 };
 
 function fmtDate(d: string) {
@@ -90,9 +100,10 @@ interface OrderCardProps {
   onDetail: () => void;
   onCancel: () => void;
   cancelling: boolean;
+  sellerName: string;
 }
 
-function OrderCard({ order, onDetail, onCancel, cancelling }: OrderCardProps) {
+function OrderCard({ order, onDetail, onCancel, cancelling, sellerName }: OrderCardProps) {
   const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.PENDING;
   const cancellableStatuses = ['PENDING', 'CONFIRMED', 'PROCESSING'];
   const canCancel = cancellableStatuses.includes(order.status);
@@ -105,7 +116,7 @@ function OrderCard({ order, onDetail, onCancel, cancelling }: OrderCardProps) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Ionicons name="storefront-outline" size={14} color={Colors.primary} />
             <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.primary }}>
-              {order.seller?.storeName || 'ShopHub Store'}
+              {sellerName}
             </Text>
           </View>
           <Text style={S.orderId} numberOfLines={1}>Mã: #{order.id.slice(-8).toUpperCase()}</Text>
@@ -165,6 +176,51 @@ function OrderCard({ order, onDetail, onCancel, cancelling }: OrderCardProps) {
   );
 }
 
+function CancelReasonModal({
+  visible,
+  reason,
+  loading,
+  onChangeReason,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  reason: string;
+  loading: boolean;
+  onChangeReason: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={S.modalBackdrop}>
+        <View style={S.modalCard}>
+          <Text style={S.modalTitle}>Hủy đơn hàng</Text>
+          <Text style={S.modalSub}>Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng.</Text>
+          <TextInput
+            style={S.reasonInput}
+            value={reason}
+            onChangeText={onChangeReason}
+            placeholder="Ví dụ: Tôi muốn đổi địa chỉ, đặt nhầm sản phẩm..."
+            placeholderTextColor={Colors.textMuted}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+          <View style={S.modalActions}>
+            <TouchableOpacity style={S.modalGhostBtn} onPress={onClose} disabled={loading}>
+              <Text style={S.modalGhostText}>Đóng</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[S.modalDangerBtn, loading && { opacity: 0.6 }]} onPress={onSubmit} disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={S.modalDangerText}>Xác nhận hủy</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────
 
 export function OrdersScreen() {
@@ -172,6 +228,8 @@ export function OrdersScreen() {
   const qc  = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: QUERY_KEYS.orders(activeTab === 'all' ? undefined : activeTab),
@@ -182,28 +240,63 @@ export function OrdersScreen() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (id: string) => orderService.cancelOrder(id, 'Người dùng yêu cầu hủy'),
-    onMutate:   (id) => setCancellingId(id),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => orderService.cancelOrder(id, reason),
+    onMutate:   ({ id }) => setCancellingId(id),
     onSettled:  () => setCancellingId(null),
     onSuccess:  () => {
       qc.invalidateQueries({ queryKey: ['orders'] });
-      Alert.alert('Đã hủy', 'Đơn hàng đã được hủy thành công');
+      setCancelTargetId(null);
+      setCancelReason('');
+      Alert.alert('Đã gửi yêu cầu', 'Yêu cầu hủy đơn hàng đã được gửi thành công');
     },
     onError: () => Alert.alert('Lỗi', 'Không thể hủy đơn hàng'),
   });
 
   function confirmCancel(id: string) {
-    Alert.alert(
-      'Hủy đơn hàng',
-      'Bạn có chắc muốn hủy đơn hàng này không?',
-      [
-        { text: 'Không', style: 'cancel' },
-        { text: 'Hủy đơn', style: 'destructive', onPress: () => cancelMutation.mutate(id) },
-      ],
-    );
+    setCancelTargetId(id);
+    setCancelReason('');
+  }
+
+  function submitCancel() {
+    if (!cancelTargetId) return;
+    const reason = cancelReason.trim();
+    if (!reason) {
+      Alert.alert('Thiếu lý do', 'Vui lòng nhập lý do hủy đơn.');
+      return;
+    }
+    cancelMutation.mutate({ id: cancelTargetId, reason });
   }
 
   const orders = data?.orders ?? [];
+  const productIdsMissingSeller = Array.from(new Set(
+    orders
+      .filter((order) => !order.seller?.storeName && !order.items.some((item) => item.sellerName))
+      .flatMap((order) => order.items.map((item) => item.productId)),
+  ));
+
+  const productDetailQueries = useQueries({
+    queries: productIdsMissingSeller.map((productId) => ({
+      queryKey: QUERY_KEYS.product(productId),
+      queryFn: () => productService.getProductById(productId),
+      staleTime: 5 * 60_000,
+    })),
+  });
+
+  const productDetailsById = new Map(
+    productDetailQueries
+      .map((q) => q.data)
+      .filter((product): product is NonNullable<typeof product> => product != null)
+      .map((product) => [product.id, product]),
+  );
+
+  function getOrderSellerName(order: Order) {
+    const directName = order.seller?.storeName ?? order.items.find((item) => item.sellerName)?.sellerName;
+    if (directName) return directName;
+    const detailName = order.items
+      .map((item) => productDetailsById.get(item.productId)?.seller?.storeName)
+      .find(Boolean);
+    return detailName ?? 'ShopHub Store';
+  }
 
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
@@ -248,10 +341,21 @@ export function OrdersScreen() {
               onDetail={() => nav.navigate('OrderDetail', { orderId: item.id })}
               onCancel={() => confirmCancel(item.id)}
               cancelling={cancellingId === item.id}
+              sellerName={getOrderSellerName(item)}
             />
           )}
         />
       )}
+      <CancelReasonModal
+        visible={!!cancelTargetId}
+        reason={cancelReason}
+        loading={cancelMutation.isPending}
+        onChangeReason={setCancelReason}
+        onClose={() => {
+          if (!cancelMutation.isPending) setCancelTargetId(null);
+        }}
+        onSubmit={submitCancel}
+      />
     </SafeAreaView>
   );
 }
@@ -331,4 +435,50 @@ const S = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   cancelBtnText: { fontSize: 13, fontWeight: '700', color: Colors.danger },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: 18,
+    backgroundColor: Colors.surface,
+    padding: 18,
+    gap: 12,
+    ...Shadows.card,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
+  modalSub: { fontSize: 13, color: Colors.textSub, lineHeight: 18 },
+  reasonInput: {
+    minHeight: 110,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 12,
+    color: Colors.text,
+    backgroundColor: Colors.bg,
+  },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  modalGhostBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg,
+  },
+  modalGhostText: { fontSize: 14, fontWeight: '700', color: Colors.textSub },
+  modalDangerBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.danger,
+  },
+  modalDangerText: { fontSize: 14, fontWeight: '800', color: '#fff' },
 });
