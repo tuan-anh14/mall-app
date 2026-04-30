@@ -130,17 +130,17 @@ export function NotificationsScreen() {
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
   const [filter, setFilter] = useState<Filter>('all');
 
-  const queryParams =
-    filter === 'unread' ? { isRead: false, limit: 50 }
-    : filter === 'read'  ? { isRead: true,  limit: 50 }
-    :                       { limit: 50 };
-
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: QUERY_KEYS.notifications(filter),
-    queryFn: () => notificationService.getNotifications(queryParams),
+    queryKey: QUERY_KEYS.notifications(),
+    queryFn: () => notificationService.getNotifications({ limit: 50 }),
   });
 
   const notifications = data?.notifications ?? [];
+  const visibleNotifications = notifications.filter((item) => {
+    if (filter === 'unread') return !item.isRead;
+    if (filter === 'read') return item.isRead;
+    return true;
+  });
   const unreadCount   = data?.unreadCount   ?? 0;
 
   useEffect(() => { setUnreadCount(unreadCount); }, [unreadCount, setUnreadCount]);
@@ -232,7 +232,7 @@ export function NotificationsScreen() {
             <Text style={S.retryText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
-      ) : notifications.length === 0 ? (
+      ) : visibleNotifications.length === 0 ? (
         <View style={S.center}>
           <View style={S.emptyIconWrap}>
             <Ionicons name="notifications-off-outline" size={44} color={Colors.textMuted} />
@@ -246,7 +246,7 @@ export function NotificationsScreen() {
         </View>
       ) : (
         <FlatList
-          data={notifications}
+          data={visibleNotifications}
           keyExtractor={(item) => item.id}
           contentContainerStyle={S.list}
           showsVerticalScrollIndicator={false}
