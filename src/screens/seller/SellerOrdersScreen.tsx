@@ -258,7 +258,7 @@ function SellerReturnModal({
         sellerNote: sellerNote.trim() || undefined,
         refundAmount: refundAmount ? Number(refundAmount) : undefined,
       });
-      Alert.alert('Thành công', 'Cập nhật yêu cầu đổi trả thành công.');
+      Alert.alert('Thành công', 'Cập nhật yêu cầu trả thành công.');
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -490,7 +490,7 @@ export function SellerOrdersScreen() {
               onConfirmCodPayment={() => confirmCodMutation.mutate(item.id)}
               onManageReturn={() => {
                 if (!item.returnRequest?.id) {
-                  Alert.alert('Thiếu dữ liệu', 'Đơn này chưa có mã yêu cầu đổi trả.');
+                  Alert.alert('Thiếu dữ liệu', 'Đơn này chưa có mã yêu cầu trả hàng.');
                   return;
                 }
                 setSelectedReturnRequestId(item.returnRequest.id);

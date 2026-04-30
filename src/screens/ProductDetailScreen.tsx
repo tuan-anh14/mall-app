@@ -47,7 +47,7 @@ const EMOJIS = ['😍', '🥰', '😊', '😐', '😔'];
 const TRUST_ITEMS = [
   { icon: 'car-outline', title: 'Miễn phí vận chuyển', sub: 'Đơn > 500.000 ₫' },
   { icon: 'shield-checkmark-outline', title: 'Thanh toán an toàn', sub: 'Bảo mật SSL 256-bit' },
-  { icon: 'refresh-circle-outline', title: 'Đổi trả 30 ngày', sub: 'Hoàn tiền nhanh' },
+  { icon: 'refresh-circle-outline', title: 'Đổi trả 7 ngày', sub: 'Hoàn tiền nhanh' },
   { icon: 'headset-outline', title: 'Hỗ trợ 24/7', sub: 'Chat trực tiếp' },
 ] as const;
 

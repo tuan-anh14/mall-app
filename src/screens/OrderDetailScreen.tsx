@@ -195,7 +195,7 @@ export function OrderDetailScreen() {
   const returnMutation = useMutation({
     mutationFn: async () => {
       const reason = returnReason.trim();
-      if (!reason) throw new Error('Vui lòng nhập lý do đổi trả hàng.');
+      if (!reason) throw new Error('Vui lòng nhập lý do trả hàng.');
       if (returnImages.length === 0) throw new Error('Vui lòng tải lên ít nhất một ảnh minh chứng.');
       const urls = await returnService.uploadImages(buildImagesFormData(returnImages));
       return returnService.createRequest({ orderId, reason, images: urls });
@@ -206,10 +206,10 @@ export function OrderDetailScreen() {
       setReturnModalOpen(false);
       setReturnReason('');
       setReturnImages([]);
-      Alert.alert('Thành công', 'Yêu cầu đổi trả đã được gửi thành công.');
+      Alert.alert('Thành công', 'Yêu cầu trả hàng đã được gửi thành công.');
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || error?.message || 'Không thể gửi yêu cầu đổi trả.';
+      const msg = error?.response?.data?.message || error?.message || 'Không thể gửi yêu cầu trả hàng.';
       Alert.alert('Lỗi', msg);
     },
   });
@@ -425,7 +425,7 @@ export function OrderDetailScreen() {
       <Modal visible={returnModalOpen} transparent animationType="fade" onRequestClose={() => setReturnModalOpen(false)}>
         <View style={S.modalBackdrop}>
           <View style={S.modalCard}>
-            <Text style={S.modalTitle}>Yêu cầu đổi trả hàng</Text>
+            <Text style={S.modalTitle}>Yêu cầu trả hàng</Text>
             <Text style={S.modalSub}>Mô tả lý do và tải lên ảnh minh chứng. Tối đa 5 ảnh.</Text>
             <TextInput
               style={S.textarea}
