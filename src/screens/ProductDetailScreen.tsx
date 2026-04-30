@@ -45,10 +45,10 @@ const CARD_W = (W - 12 * 2 - 12) / 2;
 const EMOJIS = ['😍', '🥰', '😊', '😐', '😔'];
 
 const TRUST_ITEMS = [
-  { icon: 'car-outline',               title: 'Miễn phí vận chuyển', sub: 'Đơn > 500.000 ₫' },
-  { icon: 'shield-checkmark-outline',  title: 'Thanh toán an toàn',  sub: 'Bảo mật SSL 256-bit' },
-  { icon: 'refresh-circle-outline',    title: 'Đổi trả 30 ngày',     sub: 'Hoàn tiền nhanh' },
-  { icon: 'headset-outline',           title: 'Hỗ trợ 24/7',         sub: 'Chat trực tiếp' },
+  { icon: 'car-outline', title: 'Miễn phí vận chuyển', sub: 'Đơn > 500.000 ₫' },
+  { icon: 'shield-checkmark-outline', title: 'Thanh toán an toàn', sub: 'Bảo mật SSL 256-bit' },
+  { icon: 'refresh-circle-outline', title: 'Đổi trả 30 ngày', sub: 'Hoàn tiền nhanh' },
+  { icon: 'headset-outline', title: 'Hỗ trợ 24/7', sub: 'Chat trực tiếp' },
 ] as const;
 
 // ─── Helpers ──────────────────────────────────────────
@@ -102,10 +102,10 @@ function RatingBar({ star, count, total }: { star: number; count: number; total:
 }
 
 const RB = StyleSheet.create({
-  row:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
   label: { width: 10, fontSize: 12, color: Colors.textSub, textAlign: 'right' },
   track: { flex: 1, height: 6, backgroundColor: Colors.bg, borderRadius: 3, overflow: 'hidden' },
-  fill:  { height: 6, backgroundColor: '#F59E0B', borderRadius: 3 },
+  fill: { height: 6, backgroundColor: '#F59E0B', borderRadius: 3 },
   count: { width: 28, fontSize: 11, color: Colors.textMuted },
 });
 
@@ -115,7 +115,7 @@ function BlinkDot() {
     Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, { toValue: 0.2, duration: 600, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 1,   duration: 600, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
       ]),
     ).start();
   }, [opacity]);
@@ -165,7 +165,7 @@ function ReviewCard({
   onAddEmoji,
 }: ReviewCardProps) {
   const [showAllReplies, setShowAllReplies] = useState(false);
-  const firstReply   = review.replies[0] ?? null;
+  const firstReply = review.replies[0] ?? null;
   const extraReplies = review.replies.slice(1);
 
   const renderReply = (reply: any) => (
@@ -423,17 +423,17 @@ const RC = StyleSheet.create({
 // ─── ProductDetailScreen ──────────────────────────────
 
 type RouteT = RouteProp<RootStackParamList, 'ProductDetail'>;
-type NavT   = NativeStackNavigationProp<RootStackParamList, 'ProductDetail'>;
+type NavT = NativeStackNavigationProp<RootStackParamList, 'ProductDetail'>;
 
 export function ProductDetailScreen() {
-  const route     = useRoute<RouteT>();
-  const nav       = useNavigation<NavT>();
-  const insets    = useSafeAreaInsets();
-  const qc        = useQueryClient();
+  const route = useRoute<RouteT>();
+  const nav = useNavigation<NavT>();
+  const insets = useSafeAreaInsets();
+  const qc = useQueryClient();
   const { productId } = route.params;
 
-  const HEADER_H   = insets.top + 52;
-  const BOTTOM_H   = insets.bottom + 72;
+  const HEADER_H = insets.top + 52;
+  const BOTTOM_H = insets.bottom + 72;
 
   // ── Animated scroll ──
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -452,7 +452,7 @@ export function ProductDetailScreen() {
   const [activeImg, setActiveImg] = useState(0);
   const [zoomVisible, setZoomVisible] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize]   = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reviews'>('desc');
   const [reviewPage, setReviewPage] = useState(1);
@@ -460,13 +460,13 @@ export function ProductDetailScreen() {
   // Review form
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rFormRating, setRFormRating] = useState(5);
-  const [rFormEmoji, setRFormEmoji]   = useState<string | null>(null);
-  const [rFormText, setRFormText]     = useState('');
+  const [rFormEmoji, setRFormEmoji] = useState<string | null>(null);
+  const [rFormText, setRFormText] = useState('');
   const [reviewModError, setReviewModError] = useState<string | null>(null);
 
   // Reply state
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyText, setReplyText]   = useState('');
+  const [replyText, setReplyText] = useState('');
   const [replyModError, setReplyModError] = useState<string | null>(null);
   const [replyImages, setReplyImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [showReplyEmoji, setShowReplyEmoji] = useState(false);
@@ -515,7 +515,7 @@ export function ProductDetailScreen() {
 
   // Track view history
   useEffect(() => {
-    viewHistoryService.trackView(productId).catch(() => {});
+    viewHistoryService.trackView(productId).catch(() => { });
   }, [productId]);
 
   const inWishlist = wishlistData?.inWishlist ?? false;
@@ -731,10 +731,10 @@ export function ProductDetailScreen() {
       : [];
 
   const hasDiscount = product.originalPrice != null && product.originalPrice > product.price;
-  const isLowStock  = product.stock > 0 && product.stock < 10;
+  const isLowStock = product.stock > 0 && product.stock < 10;
 
-  const reviews   = reviewsData?.reviews ?? [];
-  const summary   = reviewsData?.summary;
+  const reviews = reviewsData?.reviews ?? [];
+  const summary = reviewsData?.summary;
 
   // ── Render ──
   return (
@@ -787,7 +787,7 @@ export function ProductDetailScreen() {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, i) => String(i)}
-              onScrollToIndexFailed={() => {}}
+              onScrollToIndexFailed={() => { }}
               onMomentumScrollEnd={(e) => {
                 setActiveImg(Math.round(e.nativeEvent.contentOffset.x / W));
               }}
@@ -1010,7 +1010,7 @@ export function ProductDetailScreen() {
               </View>
               <TouchableOpacity
                 style={[
-                  S.chatBtn, 
+                  S.chatBtn,
                   (chatMutation.isPending || currentUser?.id === product.seller?.userId) && { opacity: 0.6 }
                 ]}
                 onPress={() => {
@@ -1040,8 +1040,8 @@ export function ProductDetailScreen() {
           {/* Tab bar */}
           <View style={S.tabBar}>
             {([
-              { key: 'desc',    label: 'Mô tả' },
-              { key: 'specs',   label: 'Thông số' },
+              { key: 'desc', label: 'Mô tả' },
+              { key: 'specs', label: 'Thông số' },
               { key: 'reviews', label: `Đánh giá (${product.reviewCount})` },
             ] as const).map((t) => (
               <TouchableOpacity
@@ -1068,7 +1068,7 @@ export function ProductDetailScreen() {
           {activeTab === 'specs' && (
             <View style={S.tabContent}>
               {product.specifications.length === 0 ? (
-                <Text style={S.emptyTabText}>Chưa có thông số kỹ thuật.</Text>
+                <Text style={S.emptyTabText}>Chưa có Thông số.</Text>
               ) : (
                 product.specifications.map((sp, i) => (
                   <View key={i} style={[S.specRow, i % 2 === 0 && S.specRowEven]}>
@@ -1323,7 +1323,7 @@ export function ProductDetailScreen() {
 // ─── Styles ───────────────────────────────────────────
 
 const S = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: Colors.bg },
   scroll: { flex: 1 },
   scrollContent: { paddingTop: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
@@ -1513,7 +1513,7 @@ const S = StyleSheet.create({
     marginBottom: 2,
   },
   trustTitle: { fontSize: 12, fontWeight: '700', color: Colors.text, textAlign: 'center' },
-  trustSub:   { fontSize: 10, color: Colors.textMuted, textAlign: 'center' },
+  trustSub: { fontSize: 10, color: Colors.textMuted, textAlign: 'center' },
 
   // Seller
   sellerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
