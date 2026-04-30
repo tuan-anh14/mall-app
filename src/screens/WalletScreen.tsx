@@ -55,6 +55,11 @@ function fmtDate(d: string) {
   });
 }
 
+function getTxTitle(tx: WalletTransaction) {
+  if (tx.title) return tx.title;
+  return TX_CONFIG[tx.type]?.label ?? 'Giao dịch ví';
+}
+
 // ─── Transaction row ──────────────────────────────────
 
 function TxRow({ tx }: { tx: WalletTransaction }) {
@@ -74,7 +79,7 @@ function TxRow({ tx }: { tx: WalletTransaction }) {
         />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={S.txLabel}>{cfg.label}</Text>
+        <Text style={S.txLabel}>{getTxTitle(tx)}</Text>
         {tx.description ? <Text style={S.txDesc} numberOfLines={1}>{tx.description}</Text> : null}
         <Text style={S.txDate}>{fmtDate(tx.createdAt)}</Text>
       </View>

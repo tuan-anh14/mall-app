@@ -63,6 +63,24 @@ function fmtDate(d: string | null | undefined) {
   });
 }
 
+const RETURN_WINDOW_DAYS = 7;
+
+function getDeliveredAt(order: NonNullable<Awaited<ReturnType<typeof orderService.getOrderById>>['order']>) {
+  const deliveredStep = order.tracking.steps.find(
+    (step) => step.status?.toUpperCase() === 'DELIVERED' && step.date,
+  );
+  return deliveredStep?.date ?? null;
+}
+
+function canRequestReturn(order: NonNullable<Awaited<ReturnType<typeof orderService.getOrderById>>['order']>) {
+  if (order.status !== 'DELIVERED') return false;
+  const deliveredAt = getDeliveredAt(order);
+  if (!deliveredAt) return false;
+  const expiresAt = new Date(deliveredAt);
+  expiresAt.setDate(expiresAt.getDate() + RETURN_WINDOW_DAYS);
+  return new Date() <= expiresAt;
+}
+
 // ─── Timeline ─────────────────────────────────────────
 
 function Timeline({ steps }: { steps: OrderTrackingStep[] }) {
@@ -235,7 +253,7 @@ export function OrderDetailScreen() {
   const { order } = data;
   const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.PENDING;
   const canCancel = ['PENDING', 'CONFIRMED', 'PROCESSING'].includes(order.status);
-  const canReturn = order.status === 'DELIVERED';
+  const canReturn = canRequestReturn(order);
 
   return (
     <SafeAreaView style={S.safe} edges={['top']}>

@@ -18,6 +18,7 @@ export interface WalletTransaction {
   balanceBefore: number;
   balanceAfter: number;
   orderId: string | null;
+  title: string | null;
   description: string | null;
   gatewayTxnId: string | null;
   createdAt: string;
