@@ -74,22 +74,35 @@ const NEXT_LABEL: Record<string, string> = {
   Shipped:    'Đã giao',
 };
 
+const normalizeStatusKey = (status?: string | null) =>
+  status?.trim().toUpperCase().replace(/[\s-]+/g, '_') ?? '';
+
+const getOrderStatusKey = (order: Pick<SellerOrder, 'status' | 'rawStatus'>) =>
+  normalizeStatusKey(order.rawStatus || order.status);
+
 function OrderCard({
   order,
   onUpdateStatus,
   onHandleCancel,
+  onConfirmCodPayment,
   onManageReturn,
   isPending,
 }: {
   order: SellerOrder;
   onUpdateStatus: (status: string) => void;
   onHandleCancel: (action: 'APPROVE' | 'REJECT') => void;
+  onConfirmCodPayment: () => void;
   onManageReturn: () => void;
   isPending: boolean;
 }) {
-  const sc = STATUS_COLORS[order.status] ?? { text: Colors.textSub, bg: Colors.bg };
+  const statusKey = getOrderStatusKey(order);
+  const sc = STATUS_COLORS[statusKey] ?? STATUS_COLORS[order.status] ?? { text: Colors.textSub, bg: Colors.bg };
   const nextStatus = NEXT_STATUS[order.status];
   const nextLabel = nextStatus ? NEXT_LABEL[order.status] : null;
+  const canConfirmCodPayment =
+    order.status === 'Delivered' &&
+    order.paymentMethod === 'cod' &&
+    order.revenueStatus === 'UNPAID';
 
   return (
     <View style={OC.card}>
@@ -97,7 +110,9 @@ function OrderCard({
         <Text style={OC.orderId}>#{order.id.slice(-8).toUpperCase()}</Text>
         <View style={[OC.statusBadge, { backgroundColor: sc.bg }]}>
           <Text style={[OC.statusText, { color: sc.text }]}>
-            {STATUS_OPTS.find((s) => s.key === order.status)?.label ?? order.status}
+            {STATUS_OPTS.find((s) => s.key === statusKey)?.label ??
+              STATUS_OPTS.find((s) => s.key === order.status)?.label ??
+              order.status}
           </Text>
         </View>
       </View>
@@ -137,7 +152,7 @@ function OrderCard({
       <View style={OC.footer}>
         <Text style={OC.total}>{formatVnd(order.total)}</Text>
         
-        {order.status === 'CANCEL_REQUESTED' ? (
+        {statusKey === 'CANCEL_REQUESTED' ? (
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
               style={[OC.cancelBtn, OC.approveBtn, isPending && OC.updateBtnDim]}
@@ -154,13 +169,25 @@ function OrderCard({
               <Text style={[OC.cancelBtnText, { color: Colors.textSub }]}>Từ chối</Text>
             </TouchableOpacity>
           </View>
-        ) : order.status === 'RETURN_REQUESTED' ? (
+        ) : statusKey === 'RETURN_REQUESTED' ? (
           <TouchableOpacity
             style={[OC.updateBtn, isPending && OC.updateBtnDim]}
             onPress={onManageReturn}
             disabled={isPending}
           >
             <Text style={OC.updateBtnText}>Quản lý đổi/trả</Text>
+          </TouchableOpacity>
+        ) : canConfirmCodPayment ? (
+          <TouchableOpacity
+            style={[OC.updateBtn, isPending && OC.updateBtnDim]}
+            onPress={onConfirmCodPayment}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={OC.updateBtnText}>Đã nhận tiền COD</Text>
+            )}
           </TouchableOpacity>
         ) : (
           nextLabel && (
@@ -370,6 +397,18 @@ export function SellerOrdersScreen() {
     },
   });
 
+  const confirmCodMutation = useMutation({
+    mutationFn: (orderId: string) => sellerOrderService.confirmCodPayment(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
+      Alert.alert('Thành công', 'Đã ghi nhận tiền COD và cộng doanh thu vào ví shop.');
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || 'Không thể xác nhận tiền COD';
+      Alert.alert('Lỗi', msg);
+    },
+  });
+
   const orders = data?.orders ?? [];
 
   return (
@@ -448,6 +487,7 @@ export function SellerOrdersScreen() {
               onHandleCancel={(action) =>
                 cancelMutation.mutate({ orderId: item.id, action })
               }
+              onConfirmCodPayment={() => confirmCodMutation.mutate(item.id)}
               onManageReturn={() => {
                 if (!item.returnRequest?.id) {
                   Alert.alert('Thiếu dữ liệu', 'Đơn này chưa có mã yêu cầu đổi trả.');
@@ -459,7 +499,8 @@ export function SellerOrdersScreen() {
                 (updateMutation.isPending &&
                   (updateMutation.variables as { orderId: string })?.orderId === item.id) ||
                 (cancelMutation.isPending &&
-                  (cancelMutation.variables as { orderId: string })?.orderId === item.id)
+                  (cancelMutation.variables as { orderId: string })?.orderId === item.id) ||
+                (confirmCodMutation.isPending && confirmCodMutation.variables === item.id)
               }
             />
           )}

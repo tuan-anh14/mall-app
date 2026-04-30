@@ -45,4 +45,8 @@ export const sellerOrderService = {
   ): Promise<void> => {
     await api.put(`${BASE}/${orderId}/handle-cancel`, { action });
   },
+
+  confirmCodPayment: async (orderId: string): Promise<void> => {
+    await api.put(`${BASE}/${orderId}/confirm-cod-payment`);
+  },
 };

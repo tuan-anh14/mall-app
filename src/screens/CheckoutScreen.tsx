@@ -28,7 +28,7 @@ import type { RootStackParamList } from '@app/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-type PaymentMethod = 'wallet' | 'vnpay' | 'card' | 'cod';
+type PaymentMethod = 'wallet' | 'vnpay' | 'cod';
 
 const PAYMENT_OPTIONS: { key: PaymentMethod; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; desc: string }[] = [
   {
@@ -42,12 +42,6 @@ const PAYMENT_OPTIONS: { key: PaymentMethod; label: string; icon: React.Componen
     label: 'VNPAY',
     icon: 'qr-code-outline',
     desc: 'Internet Banking / ATM / QR Code',
-  },
-  {
-    key: 'card',
-    label: 'Thẻ tín dụng/ghi nợ',
-    icon: 'card-outline',
-    desc: 'Thanh toán bằng thẻ',
   },
   {
     key: 'cod',
@@ -163,8 +157,6 @@ export function CheckoutScreen() {
   const orderMutation = useMutation({
     mutationFn: orderService.createOrder,
     onSuccess: async (res) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cart });
-      setItemCount(0);
       const orderId = res.order.id;
       if (res.paymentUrl) {
         navigation.navigate('Payment', {
@@ -173,6 +165,8 @@ export function CheckoutScreen() {
         });
         return;
       }
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cart });
+      setItemCount(0);
       navigation.navigate('OrderDetail', { orderId });
     },
     onError: (err: unknown) => {

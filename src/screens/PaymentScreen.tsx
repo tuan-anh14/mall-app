@@ -17,6 +17,7 @@ import { Colors } from '@constants/theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
 import { api } from '@services/api';
 import { RootStackParamList } from '@app/navigation/types';
+import { useCartStore } from '@store/cartStore';
 
 type PaymentRouteProp = RouteProp<RootStackParamList, 'Payment'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,6 +29,7 @@ export function PaymentScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<PaymentRouteProp>();
   const queryClient = useQueryClient();
+  const setItemCount = useCartStore((s) => s.setItemCount);
   const { paymentUrl, orderId } = route.params;
   const [loading, setLoading] = useState(true);
   const webViewRef = useRef<WebView>(null);
@@ -45,21 +47,39 @@ export function PaymentScreen() {
         setLoading(true);
         try {
           // Tell backend to verify and complete the transaction
-          await api.get('/api/v1/payment/vnpay/callback', { params: queryParams });
+          const res = await api.get('/api/v1/payment/vnpay/callback', { params: queryParams });
+          const responseCode = queryParams.vnp_ResponseCode;
           
           queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wallet });
           queryClient.invalidateQueries({ queryKey: ['wallet', 'txns'] });
           
+          if (responseCode !== '00') {
+            Alert.alert('Thanh toan chua hoan tat', 'Don hang chua duoc tao. San pham van duoc giu trong gio hang.', [
+              { text: 'Dong', onPress: () => navigation.goBack() },
+            ]);
+            return;
+          }
+
           const isDeposit = orderId.startsWith('DEPOSIT');
           if (isDeposit) {
             Alert.alert('Thành công', 'Nạp tiền vào ví thành công!', [
               { text: 'Đóng', onPress: () => navigation.goBack() }
             ]);
           } else {
+            const createdOrderId = res.data?.orderId;
+            if (!createdOrderId) {
+              Alert.alert('Loi', 'Thanh toan da xac nhan nhung chua nhan duoc ma don hang. Vui long tai lai danh sach don hang.', [
+                { text: 'Dong', onPress: () => navigation.goBack() },
+              ]);
+              return;
+            }
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cart });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.orders() });
+            setItemCount(0);
             Alert.alert('Thành công', 'Thanh toán đơn hàng thành công!', [
               {
                 text: 'Xem đơn hàng',
-                onPress: () => navigation.replace('OrderDetail', { orderId }),
+                onPress: () => navigation.replace('OrderDetail', { orderId: createdOrderId }),
               },
             ]);
           }

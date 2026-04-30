@@ -5,7 +5,7 @@ const BASE = '/api/v1/orders';
 
 export interface CreateOrderDto {
   addressId: string;
-  paymentMethod: 'wallet' | 'vnpay' | 'card' | 'cod';
+  paymentMethod: 'wallet' | 'vnpay' | 'cod';
   notes?: string;
   couponCode?: string;
   returnUrl?: string;
