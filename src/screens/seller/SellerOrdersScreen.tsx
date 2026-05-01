@@ -80,8 +80,8 @@ const normalizeStatusKey = (status?: string | null) =>
 const getOrderStatusKey = (order: Pick<SellerOrder, 'status' | 'rawStatus'>) =>
   normalizeStatusKey(order.rawStatus || order.status);
 
-const getDefaultRefundAmount = (order: Pick<ReturnRequest['order'], 'subtotal' | 'tax' | 'couponDiscount'>) =>
-  Math.max(0, order.subtotal - (order.couponDiscount ?? 0) + order.tax);
+const getDefaultRefundAmount = (order: ReturnRequest["order"]) =>
+  Math.max(0, Number(order.total || 0));
 
 function OrderCard({
   order,
