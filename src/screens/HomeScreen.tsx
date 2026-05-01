@@ -551,9 +551,6 @@ export function HomeScreen() {
   const { data: trendingData, isLoading: trendingLoading } = useProducts(
     { trending: true, limit: 4 }, !isFiltered,
   );
-  const { data: recoProducts, isLoading: recoLoading } = useRecommendations(
-    8, !isFiltered && isAuthenticated,
-  );
   const { data: filteredData, isLoading: filteredLoading } = useProducts(
     { search: debouncedSearch || undefined, category: selectedCat || undefined, limit: 20 },
     isFiltered,
@@ -827,43 +824,6 @@ export function HomeScreen() {
                 <SectionHeader icon="ticket-outline" title="Ưu đãi đặc biệt" />
                 <View style={{ height: 14 }} />
                 <PromoSection promotions={promotions} onShop={goToSearch} />
-              </View>
-            )}
-
-            {/* ── 7. GỢI Ý CHO BẠN (chỉ khi đã đăng nhập) */}
-            {isAuthenticated && (
-              <View style={S.card}>
-                <View style={S.secRowPad}>
-                  <SectionHeader
-                    icon="sparkles-outline"
-                    title="Gợi ý cho bạn"
-                    onMore={goToSearch}
-                  />
-                </View>
-                {recoLoading ? (
-                  <ScrollView
-                    horizontal showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={[S.recoScroll, { gap: 12 }]}
-                  >
-                    {[0, 1, 2].map((i) => <SkeletonCard key={i} width={CARD_W} />)}
-                  </ScrollView>
-                ) : recoProducts && recoProducts.length > 0 ? (
-                  <ScrollView
-                    horizontal showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={S.recoScroll}
-                  >
-                    {recoProducts.map((p) => (
-                      <ProductCard
-                        key={p.id}
-                        product={p}
-                        width={CARD_W}
-                        onPress={() => goToProduct(p.id)}
-                        isWishlisted={wishlistedIds.has(p.id)}
-                        onWishlist={() => wishlistMutation.mutate(p.id)}
-                      />
-                    ))}
-                  </ScrollView>
-                ) : null}
               </View>
             )}
 
