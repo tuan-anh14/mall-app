@@ -12,6 +12,9 @@ export interface ReturnRequest {
   createdAt: string;
   updatedAt: string;
   order: {
+    subtotal: number;
+    tax: number;
+    couponDiscount?: number | null;
     total: number;
   };
   user: {

@@ -80,6 +80,9 @@ const normalizeStatusKey = (status?: string | null) =>
 const getOrderStatusKey = (order: Pick<SellerOrder, 'status' | 'rawStatus'>) =>
   normalizeStatusKey(order.rawStatus || order.status);
 
+const getDefaultRefundAmount = (order: Pick<ReturnRequest['order'], 'subtotal' | 'tax' | 'couponDiscount'>) =>
+  Math.max(0, order.subtotal - (order.couponDiscount ?? 0) + order.tax);
+
 function OrderCard({
   order,
   onUpdateStatus,
@@ -235,7 +238,7 @@ function SellerReturnModal({
         if (!active) return;
         setRequest(data);
         setSellerNote(data.sellerNote || '');
-        setRefundAmount((data.refundAmount ?? data.order.total).toString());
+        setRefundAmount((data.refundAmount ?? getDefaultRefundAmount(data.order)).toString());
       })
       .catch((err: any) => {
         const msg = err?.response?.data?.message || err?.message || 'Không thể tải chi tiết yêu cầu.';
@@ -310,14 +313,17 @@ function SellerReturnModal({
                   </ScrollView>
                 )}
               </View>
-              <TextInput
-                style={S.modalInput}
-                value={refundAmount}
-                onChangeText={setRefundAmount}
-                keyboardType="numeric"
-                placeholder="Số tiền hoàn"
-                placeholderTextColor={Colors.textMuted}
-              />
+              <View style={S.currencyInputWrap}>
+                <TextInput
+                  style={S.currencyInput}
+                  value={refundAmount}
+                  onChangeText={setRefundAmount}
+                  keyboardType="numeric"
+                  placeholder="Số tiền hoàn"
+                  placeholderTextColor={Colors.textMuted}
+                />
+                <Text style={S.currencySuffix}>đ</Text>
+              </View>
               <TextInput
                 style={S.modalTextarea}
                 value={sellerNote}
@@ -746,14 +752,27 @@ const S = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.border,
   },
-  modalInput: {
+  currencyInputWrap: {
     height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    color: Colors.text,
     backgroundColor: Colors.bg,
+    paddingHorizontal: 12,
+  },
+  currencyInput: {
+    flex: 1,
+    color: Colors.text,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  currencySuffix: {
+    marginLeft: 10,
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textSub,
   },
   modalTextarea: {
     minHeight: 90,
