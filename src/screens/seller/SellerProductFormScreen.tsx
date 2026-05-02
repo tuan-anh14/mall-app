@@ -101,7 +101,7 @@ export function SellerProductFormScreen() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
-  const [discount, setDiscount] = useState('');
+  const [originalPrice, setOriginalPrice] = useState('');
   const [brand, setBrand] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [colors, setColors] = useState<string[]>([]);
@@ -128,7 +128,7 @@ export function SellerProductFormScreen() {
         setDescription(p.description);
         setPrice((p.price ?? 0).toString());
         setStock((p.stock ?? 0).toString());
-        setDiscount(p.discount != null ? p.discount.toString() : '');
+        setOriginalPrice(p.originalPrice != null ? p.originalPrice.toString() : '');
         setBrand(p.brand ?? '');
         setCategoryId(p.categoryId ?? '');
         setColors((p.colors as any)?.map((c: any) => c.name) ?? []);
@@ -192,7 +192,7 @@ export function SellerProductFormScreen() {
       description: description.trim(),
       price: Number(price),
       stock: Number(stock),
-      discount: discount ? Number(discount) : undefined,
+      originalPrice: originalPrice ? Number(originalPrice) : undefined,
       brand: brand.trim() || undefined,
       categoryId: categoryId || undefined,
       colors,
@@ -359,12 +359,12 @@ export function SellerProductFormScreen() {
             </View>
           </View>
 
-          <Field label="Giảm giá (%)">
+          <Field label="Giá gốc (VND)">
             <TextInput
               style={S.input}
-              value={discount}
-              onChangeText={setDiscount}
-              placeholder="0 - 100"
+              value={originalPrice}
+              onChangeText={setOriginalPrice}
+              placeholder="0 (Dùng để hiển thị giá gốc gạch ngang)"
               placeholderTextColor={Colors.textMuted}
               keyboardType="numeric"
             />

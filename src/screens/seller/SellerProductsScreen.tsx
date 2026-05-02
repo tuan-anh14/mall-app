@@ -51,7 +51,9 @@ function ProductRow({
     (product.images as any)?.find((img: any) => img.isPrimary)?.url ??
     (product.images as any)?.[0]?.url ??
     null;
-  const statusStyle = STATUS_COLORS[product.status] ?? STATUS_COLORS.DRAFT;
+  const statusStyle = !product.isApproved 
+    ? (product.rejectionReason ? { text: '#DC2626', bg: '#FEF2F2' } : { text: '#D97706', bg: '#FFFBEB' })
+    : (STATUS_COLORS[product.status] ?? STATUS_COLORS.DRAFT);
 
   return (
     <View style={PR.container}>
@@ -74,11 +76,28 @@ function ProductRow({
         <Text style={PR.name} numberOfLines={2}>
           {product.name}
         </Text>
-        <Text style={PR.price}>{formatVnd(product.price)}</Text>
+        <View style={PR.priceRow}>
+          <Text style={PR.price}>{formatVnd(product.price)}</Text>
+          {product.originalPrice && product.originalPrice > product.price && (
+            <Text style={PR.originalPrice}>{formatVnd(product.originalPrice)}</Text>
+          )}
+        </View>
+        
+        {product.rejectionReason && !product.isApproved && (
+          <View style={PR.rejectionBox}>
+            <Ionicons name="alert-circle" size={12} color="#DC2626" />
+            <Text style={PR.rejectionText} numberOfLines={1}>
+              Lý do: {product.rejectionReason}
+            </Text>
+          </View>
+        )}
+
         <View style={PR.metaRow}>
           <View style={[PR.statusBadge, { backgroundColor: statusStyle.bg }]}>
             <Text style={[PR.statusText, { color: statusStyle.text }]}>
-              {STATUS_LABEL[product.status] ?? product.status}
+              {!product.isApproved 
+                ? (product.rejectionReason ? 'Bị từ chối' : 'Chờ duyệt')
+                : (STATUS_LABEL[product.status] ?? product.status)}
             </Text>
           </View>
           <Text style={PR.stock}>Kho: {product.stock}</Text>
@@ -271,10 +290,36 @@ const PR = StyleSheet.create({
     color: Colors.text,
     lineHeight: 18,
   },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   price: {
     fontSize: 14,
     fontWeight: '800',
     color: Colors.primary,
+  },
+  originalPrice: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    textDecorationLine: 'line-through',
+  },
+  rejectionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  rejectionText: {
+    fontSize: 10,
+    color: '#DC2626',
+    fontWeight: '500',
+    flex: 1,
   },
   metaRow: {
     flexDirection: 'row',

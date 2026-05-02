@@ -46,8 +46,8 @@ function StatCard({ label, value, icon, color, bg }: StatCardProps) {
 function buildStats(stats: SellerStats): StatCardProps[] {
   return [
     {
-      label: 'Doanh thu',
-      value: formatVnd(stats.totalRevenue ?? 0),
+      label: 'Doanh thu (Net)',
+      value: formatVnd(stats.netIncome ?? 0),
       icon: 'cash-outline',
       color: '#059669',
       bg: '#ECFDF5',
@@ -60,32 +60,32 @@ function buildStats(stats: SellerStats): StatCardProps[] {
       bg: Colors.primaryLight,
     },
     {
-      label: 'Chờ xử lý',
-      value: (stats.pendingOrders ?? 0).toString(),
-      icon: 'time-outline',
-      color: '#D97706',
-      bg: '#FFFBEB',
+      label: 'Khách hàng',
+      value: (stats.totalCustomers ?? 0).toString(),
+      icon: 'people-outline',
+      color: '#3B82F6',
+      bg: '#EFF6FF',
     },
     {
-      label: 'Hoàn thành',
-      value: (stats.completedOrders ?? 0).toString(),
-      icon: 'checkmark-circle-outline',
-      color: '#059669',
-      bg: '#ECFDF5',
-    },
-    {
-      label: 'Sản phẩm',
+      label: 'Tổng sản phẩm',
       value: (stats.totalProducts ?? 0).toString(),
       icon: 'cube-outline',
       color: '#7C3AED',
       bg: '#EDE9FE',
     },
     {
-      label: 'Đánh giá TB',
-      value: (stats.averageRating ?? 0) > 0 ? stats.averageRating!.toFixed(1) : '—',
-      icon: 'star-outline',
+      label: 'Chờ duyệt',
+      value: (stats.pendingProducts ?? 0).toString(),
+      icon: 'time-outline',
       color: '#D97706',
       bg: '#FFFBEB',
+    },
+    {
+      label: 'Phí sàn',
+      value: formatVnd(stats.totalFees ?? 0),
+      icon: 'cut-outline',
+      color: '#EF4444',
+      bg: '#FEF2F2',
     },
   ];
 }

@@ -2,12 +2,16 @@ import { RevenueStatus } from './order';
 
 export interface SellerStats {
   totalRevenue: number;
+  netIncome: number;
+  totalFees: number;
   totalOrders: number;
   totalProducts: number;
-  pendingOrders: number;
-  completedOrders: number;
-  averageRating: number;
-  totalReviews: number;
+  pendingProducts: number;
+  totalCustomers: number;
+  revenueChange: number;
+  ordersChange: number;
+  productsChange: number;
+  customersChange: number;
 }
 
 export interface SalesDataPoint {
@@ -21,6 +25,7 @@ export interface SellerProduct {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number | null;
   stock: number;
   image: string | null;
   images: string[] | any[];
@@ -33,6 +38,8 @@ export interface SellerProduct {
   colors: string[] | any[];
   sizes: string[] | any[];
   brand: string | null;
+  isApproved: boolean;
+  rejectionReason: string | null;
   createdAt: string;
 }
 
@@ -40,6 +47,7 @@ export interface CreateProductDto {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
   stock: number;
   categoryId?: string;
   images?: string[];
@@ -49,7 +57,9 @@ export interface CreateProductDto {
   brand?: string;
 }
 
-export type UpdateProductDto = Partial<CreateProductDto>;
+export interface UpdateProductDto extends Partial<CreateProductDto> {
+  status?: string;
+}
 
 export interface SellerOrderItem {
   productName: string;
